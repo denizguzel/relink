@@ -12,15 +12,15 @@ closing the browser.
 
 ## Screenshots
 
-<p align="center"><img src="assets/screenshots/overview.png" alt="Overview: two stuck browser connections found, with Fix now, Check now and Pause" width="880"></p>
+<p align="center"><img src="assets/screenshots/overview.png" alt="Overview: two stuck browser connections, the browser, VPN and company path, the counters and recent activity" width="880"></p>
 
 <p align="center">
-<img src="assets/screenshots/connections.png" alt="Browser connections marked Stuck, VPN or Internet" width="435">
-<img src="assets/screenshots/hosts.png" alt="Watched hosts marked VPN, Internet, Route missing or Unresolved" width="435">
+<img src="assets/screenshots/connections.png" alt="Browser connections marked Problem, On VPN or Internet" width="435">
+<img src="assets/screenshots/hosts.png" alt="Watched addresses marked Off VPN, On VPN, Internet or Unresolved" width="435">
 </p>
 
 <p align="center">
-<img src="assets/screenshots/settings.png" alt="Settings: automatic fix, check interval, notifications and updates" width="435">
+<img src="assets/screenshots/settings.png" alt="Settings: automatic fix, start and close behaviour, check interval, notifications and updates" width="435">
 <img src="assets/screenshots/activity.png" alt="Activity log grouped by day" width="435">
 </p>
 

@@ -68,11 +68,12 @@ jobs:
           Start-Process $setup.FullName -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait
           if (-not (Test-Path "$dir\relink.exe")) { throw "relink.exe was not installed under $dir" }
           & "$dir\relink.exe" --version
-          $uninstall = "Software\Microsoft\Windows\CurrentVersion\Uninstall"
-          $hkcu = Get-ChildItem "HKCU:\$uninstall" | Where-Object { $_.GetValue("DisplayName") -eq "Re-Link" }
-          if (-not $hkcu) { throw "no per-user (HKCU) uninstall entry" }
-          $hklm = Get-ChildItem "HKLM:\$uninstall" -ErrorAction SilentlyContinue | Where-Object { $_.GetValue("DisplayName") -eq "Re-Link" }
-          if ($hklm) { throw "the installer wrote to HKLM (needs administrator rights)" }
+          # Inno writes the uninstall entry under the AppId from relink.iss.
+          $id = "{6F1D2B5A-3C47-4E0B-9A58-2D7E41C0B9A3}_is1"
+          $tail = "Microsoft\Windows\CurrentVersion\Uninstall\$id"
+          if (-not (Test-Path -LiteralPath "HKCU:\Software\$tail")) { throw "no per-user (HKCU) uninstall entry" }
+          if (Test-Path -LiteralPath "HKLM:\Software\$tail") { throw "the installer wrote to HKLM (needs administrator rights)" }
+          if (Test-Path -LiteralPath "HKLM:\Software\WOW6432Node\$tail") { throw "the installer wrote to HKLM (needs administrator rights)" }
           Start-Process "$dir\unins000.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES" -Wait
           Start-Sleep -Seconds 2
           if (Test-Path "$dir\relink.exe") { throw "relink.exe was not removed" }

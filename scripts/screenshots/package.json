@@ -1,0 +1,8 @@
+{
+  "name": "relink-screenshots",
+  "private": true,
+  "description": "Builds the README's split light/dark hero from two headless renders (dev tool, not shipped).",
+  "type": "module",
+  "scripts": { "build": "node split.mjs" },
+  "dependencies": { "@resvg/resvg-js": "2.6.2" }
+}

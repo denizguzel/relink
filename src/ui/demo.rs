@@ -264,8 +264,24 @@ pub const SCENES: &[Scene] = &[
         publish(u, false, false, true);
         u.page = Page::Settings
     }),
+    ("connections-en", |u| {
+        crate::i18n::apply("en");
+        publish(u, true, false, true);
+        u.page = Page::Connections
+    }),
+    ("hosts-en", |u| {
+        crate::i18n::apply("en");
+        publish(u, false, true, true);
+        u.page = Page::Hosts
+    }),
+    ("activity-en", |u| {
+        crate::i18n::apply("en");
+        publish(u, true, false, true);
+        u.page = Page::Activity
+    }),
     ("ok-light", |u| light(u, "ok")),
     ("stuck-light", |u| light(u, "stuck")),
+    ("stuck-en-light", |u| light(u, "stuck-en")),
     ("missing-light", |u| light(u, "missing")),
     ("settling-light", |u| light(u, "settling")),
     ("welcome-light", |u| light(u, "welcome")),

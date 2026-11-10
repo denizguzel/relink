@@ -79,6 +79,11 @@ sync with `STATUS` in the script). In the window the logo is the same glyph on a
 tile, tinted with the status colour. The GitHub social preview
 (`assets/brand/social-preview.png`) is uploaded by hand in the repository settings.
 
+README screenshots come from the demo scenes (`make snaps`, the `*-en` scenes).
+`scripts/screenshots/split.mjs` joins a dark and a light render of the same scene
+along a curve for the hero: `cd scripts/screenshots && npm install`, then
+`node split.mjs <dark.png> <light.png> <out.png>`.
+
 ## Distribution and updates
 
 Releases are GitHub Releases built by `.github/workflows/release.yml` on a `v*`

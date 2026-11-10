@@ -10,6 +10,20 @@ intermittently return **403/400**. Reconnecting the VPN doesn't help; only fully
 restarting the browser does. Re-Link watches for this quietly in the tray and fixes it
 without closing the browser.
 
+## Screenshots
+
+<p align="center"><img src="assets/screenshots/overview.png" alt="Overview: two stuck browser connections found, with Fix now, Check now and Pause" width="880"></p>
+
+<p align="center">
+<img src="assets/screenshots/connections.png" alt="Browser connections marked Stuck, VPN or Internet" width="435">
+<img src="assets/screenshots/hosts.png" alt="Watched hosts marked VPN, Internet, Route missing or Unresolved" width="435">
+</p>
+
+<p align="center">
+<img src="assets/screenshots/settings.png" alt="Settings: automatic fix, check interval, notifications and updates" width="435">
+<img src="assets/screenshots/activity.png" alt="Activity log grouped by day" width="435">
+</p>
+
 ## Why it happens
 
 FortiClient's split tunnel adds `/32` routes for specific hosts only. If the browser

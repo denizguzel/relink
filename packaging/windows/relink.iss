@@ -1,7 +1,13 @@
 ; Re-Link per-user installer (Inno Setup 6). Built by the release workflow:
-;   ISCC /DAppVersion=0.3.0 /DExe=relink.exe /DOutputDir=dist packaging\windows\relink.iss
+;   ISCC /DAppId=<windows-app-id> /DAppVersion=0.3.0 /DExe=relink.exe /DOutputDir=dist packaging\windows\relink.iss
+; AppId comes from `windows-app-id` in Cargo.toml (the only place it is written).
 ; Never needs administrator rights: it installs for the current user only,
 ; under %LOCALAPPDATA%\Programs, and registers itself under HKCU.
+#ifndef AppId
+  #error AppId is required: pass /DAppId= with windows-app-id from Cargo.toml
+#endif
+; Inno reads a leading "{{" as a literal "{": the setting becomes {GUID}.
+#define AppIdSetting "{{" + AppId + "}"
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
@@ -13,7 +19,7 @@
 #endif
 
 [Setup]
-AppId={{6F1D2B5A-3C47-4E0B-9A58-2D7E41C0B9A3}
+AppId={#AppIdSetting}
 AppName=Re-Link
 ; Apps & features shows this name; without it Inno appends "version <AppVersion>".
 AppVerName=Re-Link

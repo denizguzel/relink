@@ -132,6 +132,13 @@ impl Monitor {
     }
 
     fn found_update(&mut self, found: update::Available) {
+        // The same release again (the 12-hour check, "Check now"): the row in
+        // Settings is enough, no second notification.
+        if self.updates.found.as_ref().map(|f| &f.version) == Some(&found.version) {
+            self.updates.found = Some(found.clone());
+            self.handle.update(move |s, _| s.update = Some(found));
+            return;
+        }
         let text = t!("ev_update_available", version = found.version);
         notify(
             "update",

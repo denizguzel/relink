@@ -190,5 +190,6 @@
   "update_up_to_date": "Güncel ✓",
   "update_check_failed": "Kontrol edilemedi",
   "just_now": "az önce",
-  "watching_live": "Canlı izleniyor"
+  "watching_live": "Canlı izleniyor",
+  "ev_updated": "{{version}} sürümüne güncellendi"
 }

@@ -54,7 +54,10 @@ fn run(url: &str, dest: Option<&Path>, seconds: u32, max_bytes: u64) -> Result<S
 fn curl() -> Command {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    let mut cmd = Command::new("curl.exe");
+    // The full path: a bare name is looked up in the program's own folder
+    // first, where a planted curl.exe would run instead.
+    let root = std::env::var_os("SystemRoot").unwrap_or_else(|| r"C:\Windows".into());
+    let mut cmd = Command::new(Path::new(&root).join("System32").join("curl.exe"));
     cmd.creation_flags(CREATE_NO_WINDOW);
     cmd
 }

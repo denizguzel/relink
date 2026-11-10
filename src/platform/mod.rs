@@ -3,6 +3,7 @@
 
 mod desktop;
 mod geometry;
+mod install_entry;
 mod notify;
 #[cfg(windows)]
 mod own_window;
@@ -16,6 +17,7 @@ mod window;
 
 pub use desktop::{attach_console, open_in_editor, open_url};
 pub use geometry::{default_window_size, pick_size};
+pub use install_entry::sync_install_entry;
 pub use notify::{notify, on_notification_click};
 pub use placement::{place_window, screen_work_area};
 pub use process::wait_for_exit;

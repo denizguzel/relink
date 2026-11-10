@@ -90,7 +90,11 @@ Releases are GitHub Releases built by `.github/workflows/release.yml` on a `v*`
 tag (`RELEASING.md`; `scripts/release.sh` bumps, commits and tags, never pushes;
 `scripts/package.py` makes every release file, locally and in CI). Windows
 installs per user only (`packaging/windows/relink.iss`, no administrator rights,
-no HKLM; CI checks this). `update/` checks the latest release through the OS's
+no HKLM; CI checks this). The installer's AppId is written once, as
+`windows-app-id` in `Cargo.toml`: `build.rs` gives it to the code and the release
+workflow passes it to ISCC (`/DAppId=`). An installed copy keeps its "Installed
+apps" version current at start (`platform/install_entry.rs`), since the in-app
+update swaps only the executable. `update/` checks the latest release through the OS's
 `curl`, and `Update and restart` swaps the running executable (rename to `.old`,
 verified against the release's `SHA256SUMS`, new process waits for the old one
 with `--wait-pid`). `release.rs`, `asset.rs`, `version.rs` and `install.rs`'s swap are

@@ -57,7 +57,10 @@ jobs:
           $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source
           if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
           New-Item -ItemType Directory -Force dist | Out-Null
-          & $iscc "/DAppVersion=${{ needs.check.outputs.version }}" "/DExe=$PWD\target\release\relink.exe" "/DOutputDir=$PWD\dist" packaging\windows\relink.iss
+          # The AppId is written once, as windows-app-id in Cargo.toml.
+          $appId = (Select-String -Path Cargo.toml -Pattern '^windows-app-id = "([0-9A-Fa-f-]{36})"').Matches[0].Groups[1].Value
+          if (-not $appId) { throw "windows-app-id missing from Cargo.toml" }
+          & $iscc "/DAppId=$appId" "/DAppVersion=${{ needs.check.outputs.version }}" "/DExe=$PWD\target\release\relink.exe" "/DOutputDir=$PWD\dist" packaging\windows\relink.iss
           if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
       - name: Test the installer (per-user, no administrator rights)
         shell: pwsh
@@ -73,8 +76,9 @@ jobs:
           $startMenu = [Environment]::GetFolderPath("Programs")
           if (-not (Test-Path "$desktop\Re-Link.lnk")) { throw "no desktop shortcut" }
           if (-not (Test-Path "$startMenu\Re-Link.lnk")) { throw "no Start menu shortcut" }
-          # Inno writes the uninstall entry under the AppId from relink.iss.
-          $id = "{6F1D2B5A-3C47-4E0B-9A58-2D7E41C0B9A3}_is1"
+          # Inno writes the uninstall entry under the AppId (windows-app-id in Cargo.toml).
+          $appId = (Select-String -Path Cargo.toml -Pattern '^windows-app-id = "([0-9A-Fa-f-]{36})"').Matches[0].Groups[1].Value
+          $id = "{$appId}_is1"
           $tail = "Microsoft\Windows\CurrentVersion\Uninstall\$id"
           if (-not (Test-Path -LiteralPath "HKCU:\Software\$tail")) { throw "no per-user (HKCU) uninstall entry" }
           if (Test-Path -LiteralPath "HKLM:\Software\$tail") { throw "the installer wrote to HKLM (needs administrator rights)" }

@@ -61,7 +61,8 @@ fn prepare_files(paths: &Paths, cfg: &Config, cfg_err: &Option<String>, log: &Lo
 }
 
 /// Runs the app until the user quits.
-pub fn run(paths: Paths, cfg: Config, cfg_err: Option<String>, hidden: bool) {
+/// `updated`: started by the in-app update, which the activity log says.
+pub fn run(paths: Paths, cfg: Config, cfg_err: Option<String>, hidden: bool, updated: bool) {
     // A start at login stays in the tray unless the user asked for the window.
     let hidden = hidden && cfg.start_hidden;
     // A second launch brings the running window forward and exits.
@@ -74,6 +75,11 @@ pub fn run(paths: Paths, cfg: Config, cfg_err: Option<String>, hidden: bool) {
         paths.config.display()
     ));
     prepare_files(&paths, &cfg, &cfg_err, &log);
+    // An in-app update replaced only the executable: show its version in
+    // Windows' "Installed apps" too.
+    if let Some(was) = platform::sync_install_entry(&paths.exe, VERSION) {
+        log.line(&format!("installed apps entry updated: {was} -> {VERSION}"));
+    }
 
     let shared = Arc::new(Mutex::new(cfg.clone()));
     let (cmd_tx, cmd_rx) = mpsc::channel::<Cmd>();
@@ -88,6 +94,9 @@ pub fn run(paths: Paths, cfg: Config, cfg_err: Option<String>, hidden: bool) {
     let startup = platform::startup_enabled(&paths.exe);
     let history = relink::monitor::load_history(&paths.log, ui::MAX_EVENTS);
     let mut first = vec![(t!("ev_started", version = VERSION), Level::Info)];
+    if updated {
+        first.push((t!("ev_updated", version = VERSION), Level::Good));
+    }
     if let Some(e) = cfg_err {
         first.push((t!("ev_config_error", error = e), Level::Warn));
     }

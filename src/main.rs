@@ -51,16 +51,22 @@ fn main() -> ExitCode {
 
     // Started by an update: let the old version finish quitting first, then
     // delete it.
-    if let Some(pid) = args
+    let updated = args
         .iter()
         .position(|a| a == relink::update::WAIT_ARG)
         .and_then(|i| args.get(i + 1))
-        .and_then(|p| p.parse().ok())
-    {
+        .and_then(|p| p.parse().ok());
+    if let Some(pid) = updated {
         platform::wait_for_exit(pid, std::time::Duration::from_secs(20));
     }
     relink::update::remove_old();
 
-    app::run(paths, cfg, cfg_err, has(platform::HIDDEN_ARG));
+    app::run(
+        paths,
+        cfg,
+        cfg_err,
+        has(platform::HIDDEN_ARG),
+        updated.is_some(),
+    );
     ExitCode::SUCCESS
 }

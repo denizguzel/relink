@@ -190,5 +190,6 @@
   "update_up_to_date": "Up to date ✓",
   "update_check_failed": "Could not check",
   "just_now": "just now",
-  "watching_live": "Watching live"
+  "watching_live": "Watching live",
+  "ev_updated": "Updated to {{version}}"
 }

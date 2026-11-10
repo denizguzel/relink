@@ -50,7 +50,9 @@ seconds) and every 12 hours (setting "Check for updates"). A newer, non-draft,
 non-pre-release version shows a banner; **Update and restart** downloads the
 bare program for the platform, checks it against `SHA256SUMS`, renames the running
 file to `.old`, puts the new one in its place and starts it. The new process waits for
-the old one to exit and then deletes the `.old` file. If the folder is not writable or
+the old one to exit and then deletes the `.old` file. At every start an installed copy also
+brings the version in Windows' "Installed apps" up to date (the per-user
+uninstall entry under HKCU), since the swap replaces only the executable. If the folder is not writable or
 a step fails, the banner offers the release page instead.
 
 - The updater only fetches files of this repository's releases over HTTPS.

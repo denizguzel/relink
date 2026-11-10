@@ -20,6 +20,8 @@ pub const LOG_FILE_NAME: &str = "relink.log";
 pub struct Config {
     /// "auto", "tr" or "en".
     pub language: String,
+    /// "system" (follow the operating system), "light" or "dark".
+    pub theme: String,
     /// Restart the browser network service without asking.
     pub auto_fix: bool,
     /// Which notifications to show: "all", "problems" (stuck connections and
@@ -50,6 +52,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             language: "auto".into(),
+            theme: "system".into(),
             auto_fix: false,
             notifications: "problems".into(),
             welcomed: false,
@@ -403,6 +406,7 @@ mod tests {
         let c = Config::default();
         assert_eq!(c.notifications, "problems");
         assert!(!c.welcomed && !c.tray_notice_shown);
+        assert_eq!(c.theme, "system");
     }
 
     #[test]

@@ -122,7 +122,7 @@
   "copy_diagnostics": "Copy diagnostics",
   "diagnostics_copied": "Copied ✓",
   "welcome_title": "Welcome to Re-Link",
-  "welcome_body": "When connections that should use the VPN get stuck in the browser, Re-Link notices and fixes it. Two choices before you start:",
+  "welcome_body": "When connections that should use the VPN get stuck in the browser, Re-Link notices and fixes it. A few choices before you start:",
   "welcome_start": "Got it, start",
   "tray_notice_title": "Re-Link is running in the tray",
   "tray_notice_body": "The window is closed but monitoring continues. Open it or quit from the tray icon.",
@@ -152,5 +152,11 @@
   "update_failed": "The update could not be installed: {{error}}",
   "ev_update_installing": "Installing the update",
   "lang_tr": "Türkçe",
-  "lang_en": "English"
+  "lang_en": "English",
+  "theme": "Appearance",
+  "theme_desc": "Light or dark. System follows the operating system.",
+  "theme_system": "System",
+  "theme_light": "Light",
+  "theme_dark": "Dark",
+  "settings_look": "Language and appearance"
 }

@@ -16,7 +16,7 @@ NAMES = [
     "refresh-cw", "copy", "file-text", "plus", "x", "trash-2", "pause", "play",
     "bell", "zap", "timer", "languages", "bookmark", "globe", "arrow-right",
     "chevron-down", "chevron-right", "shield-check", "wrench", "external-link",
-    "search", "circle-check", "info", "circle-x", "download",
+    "search", "circle-check", "info", "circle-x", "download", "sun-moon",
 ]
 SHAPE = re.compile(r"<(path|circle|rect|line|polyline|polygon|ellipse)\b([^>]*?)\s*/>")
 ATTRS = f'fill="none" stroke="currentColor" stroke-width="{STROKE}" stroke-linecap="round" stroke-linejoin="round"'

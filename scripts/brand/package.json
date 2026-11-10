@@ -1,0 +1,8 @@
+{
+  "name": "relink-brand",
+  "private": true,
+  "description": "Renders the brand assets in assets/brand from one description (dev tool, not shipped).",
+  "type": "module",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": { "@resvg/resvg-js": "2.6.2" }
+}

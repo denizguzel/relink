@@ -2,11 +2,28 @@
 
 use rune::{Cx, El, col, row};
 
-use super::{Page, Ui, pages, sidebar::sidebar, welcome};
+use super::{Page, Ui, pages, sidebar::sidebar, theme, welcome};
+use crate::platform::{TitleBar, match_title_bar};
 
 pub fn view(s: &Ui, cx: &mut Cx<Ui>) -> El {
-    let k = rune_theme_opencode::kit(cx.system_dark());
+    let system_dark = cx.system_dark();
+    let dark = theme::is_dark(&s.cfg.theme, system_dark);
+    let k = rune_theme_opencode::kit(dark);
     let c = &k.c;
+    // The system draws the title bar: repaint it only when the theme setting
+    // forces the other appearance.
+    let [r, g, b, _] = c.bg_deep.premul_srgb(1.0);
+    let byte = |channel: f32| (channel.clamp(0.0, 1.0) * 255.0).round() as u8;
+    match_title_bar(
+        match theme::forced_title_bar(&s.cfg.theme, system_dark) {
+            Some(dark) => TitleBar::Forced {
+                dark,
+                background: [byte(r), byte(g), byte(b)],
+            },
+            None => TitleBar::System,
+        },
+        system_dark,
+    );
 
     // A new user sees only the welcome screen, without the sidebar.
     if welcome::wanted(s) {

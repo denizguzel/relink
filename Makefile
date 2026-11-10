@@ -1,4 +1,4 @@
-.PHONY: build linux linux-bin package test check snaps linklibs fmt lint
+.PHONY: build desktop linux linux-bin package test check snaps linklibs fmt lint
 
 TARGET := x86_64-pc-windows-msvc
 EXE := target/$(TARGET)/release/relink.exe
@@ -9,6 +9,10 @@ build:
 	cargo xwin build --locked --release --target $(TARGET) --bin relink
 	mkdir -p $(WINDIR)
 	cp $(EXE) $(WINDIR)/
+
+# Build, then replace the portable copy on the Windows Desktop and start it.
+desktop: build
+	scripts/deploy-desktop.sh
 
 # Linux x86_64 for Ubuntu 20.04+ (glibc 2.31) via cargo-zigbuild. `linux-bin`
 # only compiles (CI uses it too); `linux` also packages dist/release/.
@@ -40,7 +44,7 @@ test: linklibs
 snaps: linklibs
 	RUSTFLAGS="-L $(LINKLIBS)" cargo build
 	@mkdir -p target/snaps
-	@for s in ok welcome stuck missing settling paused host-detail vpn-down connections hosts settings activity stuck-en settings-en update; do \
+	@for s in ok welcome stuck missing settling paused host-detail vpn-down connections hosts settings activity stuck-en settings-en update ok-light stuck-light missing-light settling-light welcome-light paused-light host-detail-light vpn-down-light connections-light hosts-light settings-light activity-light update-light; do \
 	  VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json ./target/debug/relink --snap target/snaps/$$s.png --scene $$s >/dev/null 2>&1 && echo target/snaps/$$s.png; done
 
 check: build

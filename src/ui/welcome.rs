@@ -1,6 +1,6 @@
 //! The first screen a new user sees: no sidebar, just what Re-Link does and
-//! the two choices that matter (how many notifications, whether to start with
-//! the session). Dismissing it once shows the normal window from then on.
+//! the choices that matter (language, appearance, how many notifications, whether
+//! to start with the session). Dismissing it once shows the normal window from then on.
 
 use rune::{El, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
@@ -28,7 +28,7 @@ pub fn screen(s: &Ui, k: &Kit) -> El {
         .key("welcome-brand")
         .gap(10.0)
         .center_y()
-        .child(rune::icon(&icons::SHIELD_CHECK, 20.0).color(parts::rgb(crate::iconart::GREEN)))
+        .child(parts::logo(k))
         .child(text("Re-Link").font(parts::BRAND).color(c.text_base));
     let card = col()
         .key("welcome-card")
@@ -59,6 +59,22 @@ pub fn screen(s: &Ui, k: &Kit) -> El {
             "welcome-choices",
             k,
             vec![
+                setting_row(
+                    "welcome-language",
+                    k,
+                    &icons::LANGUAGES,
+                    t!("settings_language"),
+                    None,
+                    controls::language(s, k),
+                ),
+                setting_row(
+                    "welcome-theme",
+                    k,
+                    &icons::SUN_MOON,
+                    t!("theme"),
+                    Some(t!("theme_desc")),
+                    controls::theme(s, k),
+                ),
                 setting_row(
                     "welcome-notify",
                     k,

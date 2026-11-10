@@ -3,8 +3,8 @@
 use rune::{Color, El, ScrollSpec, TextStyle, col, el, row, text};
 use rune_kit::{Kit, ScrollBar};
 
+use crate::brand;
 use crate::diagnose::Status;
-use crate::iconart;
 
 pub const BRAND: TextStyle = TextStyle::new(15.0, 650.0).lh(20.0);
 pub const PAGE_TITLE: TextStyle = TextStyle::new(20.0, 650.0).lh(26.0);
@@ -12,22 +12,28 @@ pub const HERO_TITLE: TextStyle = TextStyle::new(22.0, 650.0).lh(28.0);
 pub const STAT_VALUE: TextStyle = TextStyle::new(24.0, 600.0).lh(30.0);
 pub const GUTTER: f32 = 28.0;
 
-pub fn rgb(c: iconart::Rgb) -> Color {
+pub fn rgb(c: brand::Rgb) -> Color {
     rune::color::hex(&format!("#{:02x}{:02x}{:02x}", c[0], c[1], c[2])).unwrap_or(Color::BLACK)
 }
 
 /// The badge colour of a status (blue while the first check runs).
 pub fn status_color(status: Option<Status>) -> Color {
-    rgb(match status {
-        None => iconart::BLUE,
-        Some(Status::Ok) => iconart::GREEN,
-        Some(Status::VpnDown) => iconart::GRAY,
-        Some(Status::Settling) => iconart::BLUE,
-        Some(Status::Stuck) => iconart::AMBER,
-        Some(Status::MissingRoute) => iconart::RED,
-    })
+    rgb(brand::status_color(status))
 }
 
+/// The logo: the link glyph on a quiet bordered tile, always in the brand blue
+/// (the status has its own light, see `status_dot`).
+pub fn logo(k: &Kit) -> El {
+    el().size(32.0, 32.0)
+        .center()
+        .radius(8.0)
+        .fill(k.c.layer_01)
+        .border(1.0, k.c.border_muted)
+        .child(rune::icon(&super::icons::LINK, 18.0).color(rgb(brand::BLUE)))
+        .a11y_hidden()
+}
+
+/// The status light: a small dot in the status colour.
 pub fn status_dot(status: Option<Status>, size: f32) -> El {
     el().size(size, size)
         .radius(size / 2.0)

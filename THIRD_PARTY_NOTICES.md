@@ -25,6 +25,12 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ```
 
+## Inter
+
+The wordmark in the banner images (`assets/brand/social-preview.png`, the installer
+wizard image) is set in [Inter](https://rsms.me/inter/), licensed under the SIL Open
+Font License 1.1. The app itself uses the Inter files bundled by the Rune toolkit.
+
 ## Rust dependencies
 
 Re-Link links the crates listed in `Cargo.lock`, each under its own license

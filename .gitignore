@@ -11,3 +11,4 @@ relink.log*
 
 # Local notes, not published
 docs/
+scripts/brand/node_modules/

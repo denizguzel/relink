@@ -16,6 +16,7 @@ mod state;
 mod status;
 #[cfg(test)]
 mod tests;
+mod theme;
 mod tick;
 mod welcome;
 

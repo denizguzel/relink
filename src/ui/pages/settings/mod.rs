@@ -7,7 +7,7 @@ use rune_kit::{Button, ButtonVariant, Kit, SegmentedControl, Switch};
 
 use self::list_editor::list_editor;
 use super::controls;
-use crate::iconart;
+use crate::brand;
 use crate::t;
 use crate::ui::Ui;
 use crate::ui::icons;
@@ -31,15 +31,7 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
     .on_pick(|s: &mut Ui, i: usize, _: &mut Tx| s.change(|c| c.interval_seconds = INTERVALS[i]))
     .build(k);
     let notifications = controls::notifications(s, k);
-    const LANGS: [&str; 3] = ["auto", "tr", "en"];
-    let lang = SegmentedControl::new(
-        &[t!("lang_auto"), t!("lang_tr"), t!("lang_en")],
-        LANGS.iter().position(|&v| v == cfg.language).or(Some(0)),
-    )
-    .label(t!("settings_language"))
-    .fit()
-    .on_pick(|s: &mut Ui, i: usize, _: &mut Tx| s.change(|c| c.language = LANGS[i].into()))
-    .build(k);
+    let lang = controls::language(s, k);
     let bookmarks = Switch::new(cfg.use_bookmarks)
         .label(t!("use_bookmarks"))
         .hide_label()
@@ -122,18 +114,28 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
                 ),
             ],
         ),
-        section(k, t!("settings_language")),
+        section(k, t!("settings_look")),
         panel(
             "language",
             k,
-            vec![setting_row(
-                "lang",
-                k,
-                &icons::LANGUAGES,
-                t!("settings_language"),
-                None,
-                lang,
-            )],
+            vec![
+                setting_row(
+                    "lang",
+                    k,
+                    &icons::LANGUAGES,
+                    t!("settings_language"),
+                    None,
+                    lang,
+                ),
+                setting_row(
+                    "theme",
+                    k,
+                    &icons::SUN_MOON,
+                    t!("theme"),
+                    Some(t!("theme_desc")),
+                    controls::theme(s, k),
+                ),
+            ],
         ),
         section(k, t!("settings_sources")),
         panel(
@@ -178,7 +180,7 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
         let on = s.published.as_ref().is_some_and(|p| p.helper);
         let badge = parts::pill(
             if on { "✓".into() } else { "—".into() },
-            parts::rgb(if on { iconart::GREEN } else { iconart::GRAY }),
+            parts::rgb(if on { brand::GREEN } else { brand::GRAY }),
             k,
         );
         content.push(panel(

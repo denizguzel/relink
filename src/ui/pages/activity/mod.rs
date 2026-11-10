@@ -5,7 +5,7 @@ mod days;
 use rune::{El, Tx, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, SegmentedControl};
 
-use crate::iconart;
+use crate::brand;
 use crate::t;
 use crate::ui::icons;
 use crate::ui::parts::{self, page, panel, section};
@@ -22,9 +22,9 @@ fn level_icon(level: Level) -> &'static rune::Icon {
 
 pub(super) fn event_row(key: &str, e: &Event, k: &Kit) -> El {
     let color = parts::rgb(match e.level {
-        Level::Info => iconart::BLUE,
-        Level::Good => iconart::GREEN,
-        Level::Warn => iconart::AMBER,
+        Level::Info => brand::BLUE,
+        Level::Good => brand::GREEN,
+        Level::Warn => brand::AMBER,
     });
     row()
         .key(key.to_string())

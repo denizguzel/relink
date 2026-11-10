@@ -6,12 +6,12 @@ pub const APP_ID: &str = "ReLink.App";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub mod bookmarks;
+pub mod brand;
 pub mod config;
 pub mod diagnose;
 pub mod engine;
 pub mod helper;
 pub mod i18n;
-pub mod iconart;
 pub mod monitor;
 pub mod net;
 pub mod platform;

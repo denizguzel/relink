@@ -8,8 +8,8 @@ use std::sync::{Arc, Mutex};
 
 use rune::AppHandle;
 
+use crate::brand;
 use crate::diagnose::Status;
-use crate::iconart;
 use crate::t;
 use crate::ui::{Cmd, Ui};
 
@@ -22,17 +22,6 @@ pub struct TrayHost {
     inner: Mutex<Inner>,
     handle: AppHandle<Ui>,
     cmd: Sender<Cmd>,
-}
-
-fn color(status: Option<Status>) -> iconart::Rgb {
-    match status {
-        None => iconart::BLUE,
-        Some(Status::Ok) => iconart::GREEN,
-        Some(Status::VpnDown) => iconart::GRAY,
-        Some(Status::Settling) => iconart::BLUE,
-        Some(Status::Stuck) => iconart::AMBER,
-        Some(Status::MissingRoute) => iconart::RED,
-    }
 }
 
 /// The tray menu. Fixing and checking mean nothing while the VPN is down (or
@@ -96,7 +85,11 @@ impl TrayHost {
         }
         inner.tray = None; // removes the old icon first
         let (handle, cmd) = (self.handle.clone(), self.cmd.clone());
-        let icon = rune::TrayIcon::rgba(32, 32, iconart::render(32, color(status)));
+        let icon = rune::TrayIcon::rgba(
+            brand::TRAY_SIZE,
+            brand::TRAY_SIZE,
+            brand::tray_rgba(status).to_vec(),
+        );
         let spec = rune::TraySpec::new("relink", "Re-Link", icon)
             .tooltip(tooltip)
             .menu(menu(status, summary, paused));
@@ -181,14 +174,5 @@ mod tests {
     fn pause_flips_to_resume_while_paused() {
         assert!(ids(&menu(Some(Status::Ok), "x", true)).contains(&"resume".to_string()));
         assert!(!ids(&menu(Some(Status::Ok), "x", true)).contains(&"pause".to_string()));
-    }
-
-    #[test]
-    fn the_icon_colour_follows_the_status() {
-        assert_eq!(color(Some(Status::Ok)), iconart::GREEN);
-        assert_eq!(color(Some(Status::Stuck)), iconart::AMBER);
-        assert_eq!(color(Some(Status::MissingRoute)), iconart::RED);
-        assert_eq!(color(Some(Status::VpnDown)), iconart::GRAY);
-        assert_eq!(color(None), iconart::BLUE);
     }
 }

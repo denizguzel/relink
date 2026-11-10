@@ -122,7 +122,7 @@
   "copy_diagnostics": "Tanılama bilgisini kopyala",
   "diagnostics_copied": "Kopyalandı ✓",
   "welcome_title": "Re-Link'e hoş geldiniz",
-  "welcome_body": "VPN'e giden bağlantılar tarayıcıda takılınca Re-Link bunu fark eder ve düzeltir. Başlamadan iki tercih:",
+  "welcome_body": "VPN'e giden bağlantılar tarayıcıda takılınca Re-Link bunu fark eder ve düzeltir. Başlamadan birkaç tercih:",
   "welcome_start": "Anladım, başla",
   "tray_notice_title": "Re-Link tepside çalışıyor",
   "tray_notice_body": "Pencereyi kapattınız ama izleme sürüyor. Tepsi simgesinden açabilir ya da çıkabilirsiniz.",
@@ -152,5 +152,11 @@
   "update_failed": "Güncelleme kurulamadı: {{error}}",
   "ev_update_installing": "Güncelleme kuruluyor",
   "lang_tr": "Türkçe",
-  "lang_en": "English"
+  "lang_en": "English",
+  "theme": "Görünüm",
+  "theme_desc": "Açık ya da koyu. Sistem, işletim sisteminin ayarını izler.",
+  "theme_system": "Sistem",
+  "theme_light": "Açık",
+  "theme_dark": "Koyu",
+  "settings_look": "Dil ve görünüm"
 }

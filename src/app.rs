@@ -6,7 +6,7 @@ use relink::config::{Config, Paths, WindowGeom};
 use relink::monitor::{Log, Monitor};
 use relink::tray::TrayHost;
 use relink::ui::{self, Cmd, Event, Level, Link, Ui};
-use relink::{APP_ID, VERSION, iconart, platform, t};
+use relink::{APP_ID, VERSION, brand, platform, t};
 
 /// The window's first size, set before the window opens: the saved one, or
 /// one computed from the screen.
@@ -49,8 +49,9 @@ fn prepare_files(paths: &Paths, cfg: &Config, cfg_err: &Option<String>, log: &Lo
         log.line(&format!("write default config: {e}"));
     }
     let icon = paths.dir.join("relink.ico");
-    if !icon.exists() {
-        let _ = std::fs::write(&icon, iconart::ico(iconart::BLUE, &[16, 32, 48, 256]));
+    // Rewritten when it differs, so an update brings the new icon.
+    if std::fs::read(&icon).ok().as_deref() != Some(brand::ICON_ICO) {
+        let _ = std::fs::write(&icon, brand::ICON_ICO);
     }
     if let Err(e) =
         rune_notify::register(&rune_notify::Identity::new(APP_ID, "Re-Link").icon(&icon))
@@ -92,7 +93,7 @@ pub fn run(paths: Paths, cfg: Config, cfg_err: Option<String>, hidden: bool) {
         log.event(text, *level);
     }
 
-    let _ = rune::set_app_icon(iconart::png(iconart::BLUE, 256));
+    let _ = rune::set_app_icon(brand::ICON_PNG);
     let mut app = rune::App::new(spec()).on_close(ui::on_close).init(move || {
         let mut s = Ui {
             version: VERSION,

@@ -102,13 +102,13 @@ fn the_short_status_is_short_enough_for_the_tray() {
 }
 
 #[test]
-fn only_the_welcome_scene_shows_the_welcome_screen() {
+fn only_the_welcome_scenes_show_the_welcome_screen() {
     for (name, apply) in SCENES {
         let mut ui = Ui::default();
         apply(&mut ui);
         assert_eq!(
             super::welcome::wanted(&ui),
-            *name == "welcome",
+            matches!(*name, "welcome" | "welcome-light"),
             "scene {name}"
         );
     }

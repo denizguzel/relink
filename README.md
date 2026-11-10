@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/brand/icon-256.png" alt="Re-Link" width="96"></p>
+
 # Re-Link
 
 A tray app for Windows and Linux that keeps browsers working while a
@@ -96,6 +98,7 @@ on first run; edits made in an editor apply without a restart.
 ```json
 {
   "language": "auto",
+  "theme": "system",
   "autoFix": false,
   "notifications": "problems",
   "intervalSeconds": 15,
@@ -107,6 +110,8 @@ on first run; edits made in an editor apply without a restart.
   "vpnAdapterKeywords": ["Fortinet SSL VPN", "FortiClient"]
 }
 ```
+
+`theme` is `system` (follow the operating system), `light` or `dark`.
 
 `bookmarkDomains` decides which bookmarked hosts count as company hosts; change it to
 match your own VPN's domains.
@@ -155,6 +160,7 @@ make snaps     # render every screen headless to PNG (target/snaps)
 make build     # the Windows exe with cargo xwin
 make linux     # the Linux files (glibc 2.31, cargo-zigbuild): dist/release/
 make package   # every release file that can be built here: dist/release/
+make desktop   # build, replace the portable copy on the Windows Desktop and start it (WSL)
 make check     # copy the exe to dist/relink-windows and run --check -v
 ```
 

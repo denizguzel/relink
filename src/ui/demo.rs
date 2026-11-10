@@ -168,6 +168,14 @@ fn tr() {
     crate::i18n::apply("tr");
 }
 
+/// Another scene, in the light theme (the others use the dark one).
+fn light(u: &mut Ui, name: &str) {
+    if let Some((_, scene)) = SCENES.iter().find(|(n, _)| *n == name) {
+        scene(u);
+    }
+    u.cfg.theme = "light".into();
+}
+
 /// A demo scene: its name and how it fills the window state.
 pub type Scene = (&'static str, fn(&mut Ui));
 
@@ -255,4 +263,17 @@ pub const SCENES: &[Scene] = &[
         publish(u, false, false, true);
         u.page = Page::Settings
     }),
+    ("ok-light", |u| light(u, "ok")),
+    ("stuck-light", |u| light(u, "stuck")),
+    ("missing-light", |u| light(u, "missing")),
+    ("settling-light", |u| light(u, "settling")),
+    ("welcome-light", |u| light(u, "welcome")),
+    ("paused-light", |u| light(u, "paused")),
+    ("host-detail-light", |u| light(u, "host-detail")),
+    ("vpn-down-light", |u| light(u, "vpn-down")),
+    ("connections-light", |u| light(u, "connections")),
+    ("hosts-light", |u| light(u, "hosts")),
+    ("settings-light", |u| light(u, "settings")),
+    ("activity-light", |u| light(u, "activity")),
+    ("update-light", |u| light(u, "update")),
 ];

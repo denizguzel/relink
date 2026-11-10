@@ -30,11 +30,12 @@ pub fn sidebar(s: &Ui, k: &Kit) -> El {
         .key("brand")
         .gap(10.0)
         .center_y()
-        .px(12.0)
+        .px(10.0)
         .pt(14.0)
         .pb(10.0)
-        .child(parts::status_dot(status, 12.0))
-        .child(text("Re-Link").font(parts::BRAND).color(c.text_base));
+        .child(parts::logo(k))
+        .child(text("Re-Link").font(parts::BRAND).color(c.text_base))
+        .child(parts::status_dot(status, 8.0));
     let quit = SidebarRow::new(t!("quit"))
         .icon(&icons::POWER)
         .on_select(|_: &mut Ui, tx: &mut Tx| tx.quit())

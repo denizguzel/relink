@@ -13,6 +13,7 @@ make build      # cargo xwin → target/x86_64-pc-windows-msvc/release/relink.ex
 make lint       # cargo fmt --check + clippy -D warnings (what CI runs)
 make package    # every release file that can be built here → dist/release/
 make linux      # cargo zigbuild (glibc 2.31) → dist/release/relink-<v>-linux-x86_64{,.tar.gz}
+make desktop    # build, then replace the portable copy on the Windows Desktop and start it
 make check      # copy to dist/relink-windows and run --check -v (read-only)
 make snaps      # render every demo scene headless to target/snaps/*.png
 ```
@@ -65,6 +66,18 @@ it kills their Chrome/Edge network service.
 - `src/main.rs` only dispatches; `src/app.rs` runs the tray app, `src/cli.rs`
   the `--check/--dump/--fix` modes.
 - `build.rs`: message catalogs, and the exe icon + version resource on Windows.
+
+## Brand
+
+The mark is a Lucide glyph (`link`) with a gradient stroke (indigo → blue →
+cyan) on a quiet bordered tile; the wordmark is Inter semibold with tight tracking. `scripts/brand/build.mjs` is the single description: it renders
+everything in `assets/brand/` (app icon `.ico`/PNG, the tray tile per status as raw
+RGBA, README/social banner, installer wizard images). Run it after changing the
+design (`cd scripts/brand && npm install && npm run build`) and commit the output;
+`src/brand.rs` only embeds the files and holds the status colours (keep them in
+sync with `STATUS` in the script). In the window the logo is the same glyph on a
+tile, tinted with the status colour. The GitHub social preview
+(`assets/brand/social-preview.png`) is uploaded by hand in the repository settings.
 
 ## Distribution and updates
 

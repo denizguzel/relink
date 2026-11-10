@@ -34,6 +34,9 @@ UninstallDisplayIcon={app}\relink.exe
 OutputDir={#OutputDir}
 OutputBaseFilename=relink-{#AppVersion}-windows-x64-setup
 WizardStyle=modern
+SetupIconFile=..\..\assets\brand\relink.ico
+WizardImageFile=..\..\assets\brand\installer-wizard.bmp
+WizardSmallImageFile=..\..\assets\brand\installer-small.bmp
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

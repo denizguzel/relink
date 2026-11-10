@@ -138,6 +138,9 @@ pub struct Ui {
     /// The window position was put back once; the geometry last written; and
     /// the one seen on the previous tick (it is saved once it stops changing).
     pub window_restored: bool,
+    /// Ticks spent waiting for the window to exist, to look quickly only at
+    /// the start (a tray-only start has no window for a long time).
+    pub place_polls: u32,
     pub window_saved: Option<crate::config::WindowGeom>,
     pub window_seen: Option<crate::config::WindowGeom>,
     /// Inputs of the settings' list editors.

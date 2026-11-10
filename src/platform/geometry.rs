@@ -6,14 +6,15 @@ use crate::config::WindowGeom;
 pub const MIN_SIZE: (f32, f32) = (760.0, 520.0);
 
 /// The window's first size: roomier than the 1000×680 floor on big screens,
-/// never more than 92% of the usable area on small ones (laptops).
+/// never more than 92% of the usable area on small ones (laptops). `work` is
+/// the usable area of the monitor the window opens on, in logical pixels.
 pub fn default_window_size(work: Option<(f32, f32)>) -> (f32, f32) {
     let Some((w, h)) = work else {
         return (1000.0, 680.0);
     };
     (
-        (w * 0.66).clamp(1000.0, 1400.0).min(w * 0.92),
-        (h * 0.78).clamp(680.0, 940.0).min(h * 0.92),
+        (w * 0.72).clamp(1000.0, 1600.0).min(w * 0.92),
+        (h * 0.82).clamp(680.0, 1000.0).min(h * 0.92),
     )
 }
 
@@ -31,13 +32,52 @@ pub fn pick_size(saved: Option<WindowGeom>, work: Option<(f32, f32)>) -> (f32, f
     }
 }
 
-/// Whether a window whose top-left is `(x, y)` can still be reached on a
-/// desktop `(left, top, width, height)`: its title bar must stay on screen,
-/// say after a monitor was unplugged.
+/// A rectangle in physical screen pixels.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Rect {
+    pub left: i32,
+    pub top: i32,
+    pub right: i32,
+    pub bottom: i32,
+}
+
+impl Rect {
+    pub fn width(&self) -> i32 {
+        self.right - self.left
+    }
+
+    pub fn height(&self) -> i32 {
+        self.bottom - self.top
+    }
+}
+
+/// The top-left that centres a `width`×`height` window in `work`. A window
+/// larger than the area is pinned to its top-left corner instead.
 #[cfg_attr(not(windows), allow(dead_code))]
-pub fn reachable(x: i32, y: i32, desktop: (i32, i32, i32, i32)) -> bool {
-    let (left, top, width, height) = desktop;
-    x >= left - 200 && y >= top && x <= left + width - 200 && y <= top + height - 100
+pub fn centered(work: Rect, width: i32, height: i32) -> (i32, i32) {
+    (
+        work.left + ((work.width() - width) / 2).max(0),
+        work.top + ((work.height() - height) / 2).max(0),
+    )
+}
+
+/// The top-left that brings the window `win` inside `work`: unchanged when it
+/// already fits, shifted when it hangs over an edge (say behind the taskbar
+/// or off a monitor that is gone), pinned to the top-left when it is larger
+/// than the area.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn fitted(work: Rect, win: Rect) -> (i32, i32) {
+    let place = |pos: i32, size: i32, lo: i32, hi: i32| {
+        if size >= hi - lo {
+            lo
+        } else {
+            pos.clamp(lo, hi - size)
+        }
+    };
+    (
+        place(win.left, win.width(), work.left, work.right),
+        place(win.top, win.height(), work.top, work.bottom),
+    )
 }
 
 #[cfg(test)]
@@ -57,10 +97,13 @@ mod tests {
     fn default_size_follows_the_screen() {
         assert_eq!(default_window_size(None), (1000.0, 680.0));
         let (w, h) = default_window_size(Some((1920.0, 1040.0)));
-        assert!(w > 1000.0 && h > 680.0 && w <= 1400.0 && h <= 940.0);
+        assert!(w > 1000.0 && h > 680.0 && w <= 1600.0 && h <= 1000.0);
         let (w, h) = default_window_size(Some((1280.0, 680.0)));
         assert!(w <= 1280.0 * 0.92 && h <= 680.0 * 0.92);
-        assert_eq!(default_window_size(Some((5120.0, 2800.0))), (1400.0, 940.0));
+        assert_eq!(
+            default_window_size(Some((5120.0, 2800.0))),
+            (1600.0, 1000.0)
+        );
     }
 
     #[test]
@@ -88,21 +131,46 @@ mod tests {
         );
     }
 
+    const WORK: Rect = Rect {
+        left: 0,
+        top: 0,
+        right: 1920,
+        bottom: 1040,
+    };
+
     #[test]
-    fn the_title_bar_must_stay_on_a_screen() {
-        let desktop = (0, 0, 1920, 1080);
-        assert!(reachable(100, 100, desktop));
-        assert!(
-            reachable(-100, 0, desktop),
-            "a little off the left edge is fine"
-        );
-        assert!(
-            !reachable(-1000, 100, desktop),
-            "a monitor on the left that is gone"
-        );
-        assert!(!reachable(100, 2000, desktop), "below every screen");
-        assert!(!reachable(3000, 100, desktop));
-        // A desktop that starts left of zero (a second monitor on the left).
-        assert!(reachable(-1500, 50, (-1920, 0, 3840, 1080)));
+    fn a_window_is_centred_in_the_work_area() {
+        assert_eq!(centered(WORK, 1000, 800), (460, 120));
+        // A second monitor to the left of the first (negative coordinates).
+        let left = Rect {
+            left: -2560,
+            top: 0,
+            right: 0,
+            bottom: 1400,
+        };
+        assert_eq!(centered(left, 1280, 800), (-1920, 300));
+        // Larger than the area: pinned to its corner, never off the top-left.
+        assert_eq!(centered(WORK, 3000, 2000), (0, 0));
+    }
+
+    #[test]
+    fn a_window_hanging_over_an_edge_is_pulled_back() {
+        let win = |l, t, w, h| Rect {
+            left: l,
+            top: t,
+            right: l + w,
+            bottom: t + h,
+        };
+        // Fits: untouched.
+        assert_eq!(fitted(WORK, win(100, 100, 1000, 700)), (100, 100));
+        // Half behind the taskbar.
+        assert_eq!(fitted(WORK, win(100, 700, 1000, 700)), (100, 340));
+        // Off the right edge and the left edge.
+        assert_eq!(fitted(WORK, win(1500, 100, 1000, 700)), (920, 100));
+        assert_eq!(fitted(WORK, win(-600, 100, 1000, 700)), (0, 100));
+        // A monitor that is gone: far outside, pulled onto this one.
+        assert_eq!(fitted(WORK, win(5000, 3000, 1000, 700)), (920, 340));
+        // Larger than the area: pinned to the corner.
+        assert_eq!(fitted(WORK, win(50, 50, 3000, 2000)), (0, 0));
     }
 }

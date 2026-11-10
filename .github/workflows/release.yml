@@ -68,6 +68,11 @@ jobs:
           Start-Process $setup.FullName -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait
           if (-not (Test-Path "$dir\relink.exe")) { throw "relink.exe was not installed under $dir" }
           & "$dir\relink.exe" --version
+          # The Start menu and desktop shortcuts (both per user).
+          $desktop = [Environment]::GetFolderPath("Desktop")
+          $startMenu = [Environment]::GetFolderPath("Programs")
+          if (-not (Test-Path "$desktop\Re-Link.lnk")) { throw "no desktop shortcut" }
+          if (-not (Test-Path "$startMenu\Re-Link.lnk")) { throw "no Start menu shortcut" }
           # Inno writes the uninstall entry under the AppId from relink.iss.
           $id = "{6F1D2B5A-3C47-4E0B-9A58-2D7E41C0B9A3}_is1"
           $tail = "Microsoft\Windows\CurrentVersion\Uninstall\$id"
@@ -77,6 +82,8 @@ jobs:
           Start-Process "$dir\unins000.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES" -Wait
           Start-Sleep -Seconds 2
           if (Test-Path "$dir\relink.exe") { throw "relink.exe was not removed" }
+          if (Test-Path "$desktop\Re-Link.lnk") { throw "the desktop shortcut was not removed" }
+          if (Test-Path "$startMenu\Re-Link.lnk") { throw "the Start menu shortcut was not removed" }
       - uses: actions/upload-artifact@v4
         with:
           name: windows

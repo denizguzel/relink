@@ -45,8 +45,13 @@ Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 [Files]
 Source: "{#Exe}"; DestDir: "{app}"; DestName: "relink.exe"; Flags: ignoreversion
 
+[Tasks]
+; Ticked by default, so a silent install makes the shortcut too.
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+
 [Icons]
 Name: "{userprograms}\Re-Link"; Filename: "{app}\relink.exe"
+Name: "{userdesktop}\Re-Link"; Filename: "{app}\relink.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\relink.exe"; Description: "{cm:LaunchProgram,Re-Link}"; Flags: nowait postinstall skipifsilent

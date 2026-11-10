@@ -1,0 +1,13 @@
+/target
+dist/
+legacy-go/dist/
+relink.json
+relink-state.json
+relink.log*
+*.png.actual
+.vscode/
+.idea/
+.DS_Store
+
+# Local notes, not published
+docs/

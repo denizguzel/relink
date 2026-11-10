@@ -1,0 +1,234 @@
+//! The Settings page.
+
+mod list_editor;
+
+use rune::{El, Tx, col, row, text};
+use rune_kit::{Button, ButtonVariant, Kit, SegmentedControl, Switch};
+
+use self::list_editor::list_editor;
+use super::controls;
+use crate::iconart;
+use crate::t;
+use crate::ui::Ui;
+use crate::ui::icons;
+use crate::ui::parts::{self, page, panel, section, setting_row};
+
+pub fn settings(s: &Ui, k: &Kit) -> El {
+    let cfg = &s.cfg;
+    let auto_fix = Switch::new(cfg.auto_fix)
+        .label(t!("auto_fix"))
+        .hide_label()
+        .on_toggle(|s: &mut Ui| s.change(|c| c.auto_fix = !c.auto_fix))
+        .build(k);
+    let startup = controls::startup(s, k);
+    const INTERVALS: [u64; 5] = [5, 10, 15, 30, 60];
+    let interval = SegmentedControl::new(
+        &["5 s", "10 s", "15 s", "30 s", "60 s"],
+        INTERVALS.iter().position(|&v| v == cfg.interval_seconds),
+    )
+    .label(t!("interval"))
+    .fit()
+    .on_pick(|s: &mut Ui, i: usize, _: &mut Tx| s.change(|c| c.interval_seconds = INTERVALS[i]))
+    .build(k);
+    let notifications = controls::notifications(s, k);
+    const LANGS: [&str; 3] = ["auto", "tr", "en"];
+    let lang = SegmentedControl::new(
+        &[t!("lang_auto"), t!("lang_tr"), t!("lang_en")],
+        LANGS.iter().position(|&v| v == cfg.language).or(Some(0)),
+    )
+    .label(t!("settings_language"))
+    .fit()
+    .on_pick(|s: &mut Ui, i: usize, _: &mut Tx| s.change(|c| c.language = LANGS[i].into()))
+    .build(k);
+    let bookmarks = Switch::new(cfg.use_bookmarks)
+        .label(t!("use_bookmarks"))
+        .hide_label()
+        .on_toggle(|s: &mut Ui| s.change(|c| c.use_bookmarks = !c.use_bookmarks))
+        .build(k);
+    let updates = Switch::new(cfg.check_updates)
+        .label(t!("check_updates"))
+        .hide_label()
+        .on_toggle(|s: &mut Ui| s.change(|c| c.check_updates = !c.check_updates))
+        .build(k);
+    let open_cfg = Button::new(t!("open_settings_file"))
+        .icon(&icons::EXTERNAL_LINK)
+        .variant(ButtonVariant::Neutral)
+        .on_press(|s: &mut Ui| {
+            if let Some(l) = &s.link {
+                crate::platform::open_in_editor(&l.config_path);
+            }
+        })
+        .build(k);
+    let open_log = Button::new(t!("open_log_file"))
+        .icon(&icons::FILE_TEXT)
+        .variant(ButtonVariant::Ghost)
+        .on_press(|s: &mut Ui| {
+            if let Some(l) = &s.link {
+                crate::platform::open_in_editor(&l.log_path);
+            }
+        })
+        .build(k);
+    let path = s
+        .link
+        .as_ref()
+        .map(|l| l.config_path.display().to_string())
+        .unwrap_or_else(|| "relink.json".into());
+
+    let content = vec![
+        section(k, t!("settings_behavior")),
+        panel(
+            "behavior",
+            k,
+            vec![
+                setting_row(
+                    "auto-fix",
+                    k,
+                    &icons::ZAP,
+                    t!("auto_fix"),
+                    Some(t!("auto_fix_desc")),
+                    auto_fix,
+                ),
+                setting_row(
+                    "startup",
+                    k,
+                    &icons::POWER,
+                    t!("startup"),
+                    Some(t!("startup_desc")),
+                    startup,
+                ),
+                setting_row(
+                    "interval",
+                    k,
+                    &icons::TIMER,
+                    t!("interval"),
+                    Some(t!("interval_desc")),
+                    interval,
+                ),
+                setting_row(
+                    "notifications",
+                    k,
+                    &icons::BELL,
+                    t!("notifications"),
+                    Some(t!("notifications_desc")),
+                    notifications,
+                ),
+                setting_row(
+                    "updates",
+                    k,
+                    &icons::DOWNLOAD,
+                    t!("check_updates"),
+                    Some(t!("check_updates_desc")),
+                    updates,
+                ),
+            ],
+        ),
+        section(k, t!("settings_language")),
+        panel(
+            "language",
+            k,
+            vec![setting_row(
+                "lang",
+                k,
+                &icons::LANGUAGES,
+                t!("settings_language"),
+                None,
+                lang,
+            )],
+        ),
+        section(k, t!("settings_sources")),
+        panel(
+            "sources",
+            k,
+            vec![setting_row(
+                "bookmarks",
+                k,
+                &icons::BOOKMARK,
+                t!("use_bookmarks"),
+                Some(t!(
+                    "use_bookmarks_desc",
+                    domains = cfg.bookmark_domains.join(", ")
+                )),
+                bookmarks,
+            )],
+        ),
+        section(k, t!("settings_domains")),
+        list_editor(
+            "domains",
+            k,
+            &cfg.bookmark_domains,
+            &s.add_domain,
+            t!("domain_placeholder"),
+            |c| &mut c.bookmark_domains,
+            |s| &mut s.add_domain,
+        ),
+        section(k, t!("settings_hosts")),
+        list_editor(
+            "hosts-list",
+            k,
+            &cfg.hosts,
+            &s.add_host,
+            t!("host_placeholder"),
+            |c| &mut c.hosts,
+            |s| &mut s.add_host,
+        ),
+        section(k, t!("settings_advanced")),
+    ];
+    let mut content = content;
+    if cfg!(target_os = "linux") {
+        let on = s.published.as_ref().is_some_and(|p| p.helper);
+        let badge = parts::pill(
+            if on { "✓".into() } else { "—".into() },
+            parts::rgb(if on { iconart::GREEN } else { iconart::GRAY }),
+            k,
+        );
+        content.push(panel(
+            "helper",
+            k,
+            vec![setting_row(
+                "helper",
+                k,
+                &icons::SHIELD_CHECK,
+                t!("helper_title"),
+                Some(if on {
+                    t!("helper_on")
+                } else {
+                    t!("helper_off")
+                }),
+                badge,
+            )],
+        ));
+    }
+    content.extend([panel(
+        "advanced",
+        k,
+        vec![
+            col()
+                .key("advanced-copy")
+                .px(16.0)
+                .py(12.0)
+                .gap(4.0)
+                .child(
+                    text(t!("advanced_desc"))
+                        .font(k.ty.small)
+                        .color(k.c.text_muted)
+                        .wrap()
+                        .w_full(),
+                )
+                .child(
+                    text(t!("settings_file_at", path = path))
+                        .font(k.ty.small)
+                        .color(k.c.text_faint)
+                        .wrap()
+                        .w_full(),
+                ),
+            row()
+                .key("advanced-actions")
+                .px(16.0)
+                .py(12.0)
+                .gap(8.0)
+                .child(open_cfg)
+                .child(open_log),
+        ],
+    )]);
+    page("settings", k, t!("nav_settings"), None, content)
+}

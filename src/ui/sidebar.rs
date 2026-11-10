@@ -50,6 +50,11 @@ pub fn sidebar(s: &Ui, k: &Kit) -> El {
         .child(parts::logo(k))
         .child(text("Re-Link").font(parts::BRAND).color(c.text_base))
         .child(parts::status_dot(status, 8.0));
+    let help = SidebarRow::new(t!("help"))
+        .icon(&icons::CIRCLE_HELP)
+        .on_select(|s: &mut Ui, _: &mut Tx| s.help_open = true)
+        .build(k)
+        .key("help");
     let quit = SidebarRow::new(t!("quit"))
         .icon(&icons::POWER)
         .on_select(|_: &mut Ui, tx: &mut Tx| tx.quit())
@@ -96,6 +101,7 @@ pub fn sidebar(s: &Ui, k: &Kit) -> El {
         .key("sidebar-footer")
         .pb(14.0)
         .gap(10.0)
+        .child(help)
         .child(quit)
         .child(
             col()

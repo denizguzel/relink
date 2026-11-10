@@ -38,10 +38,10 @@ const gradient = (id) =>
   GRADIENT.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("") +
   `</linearGradient>`;
 
-/** The glyph centred in a 256 box, `size` px tall, stroked with `stroke`. */
-const glyph = (size, stroke, paint) => {
+/** A Lucide glyph centred in a 256 box, `size` px tall, stroked with `stroke`. */
+const glyph = (size, stroke, paint, body = LINK) => {
   const k = size / 24;
-  return `<g transform="translate(${128 - 12 * k} ${128 - 12 * k}) scale(${k})" fill="none" stroke="${paint}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">${LINK}</g>`;
+  return `<g transform="translate(${128 - 12 * k} ${128 - 12 * k}) scale(${k})" fill="none" stroke="${paint}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">${body}</g>`;
 };
 
 /** The app icon: dark bordered tile, gradient link. Thicker lines when tiny. */
@@ -59,11 +59,34 @@ const bareGlyph = () => `
     <g stroke="url(#g)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${LINK}</g>
   </svg>`;
 
-/** A status tile for the tray: status colour, white glyph. */
-const trayIcon = (color) => `
+/** A status tile for the tray: status colour, white glyph. The problem states
+ * use their own Lucide glyph, so the icon differs by shape, not only colour. */
+const TRAY_GLYPHS = {
+  link: LINK,
+  alert:
+    '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>' +
+    '<path d="M12 9v4"/><path d="M12 17h.01"/>',
+  "link-off":
+    '<path d="M9 17H7A5 5 0 0 1 7 7"/><path d="M15 7h2a5 5 0 0 1 4 8"/>' +
+    '<line x1="8" x2="12" y1="12" y2="12"/><line x1="2" x2="22" y1="2" y2="22"/>',
+  unplug:
+    '<path d="m19 5 3-3"/><path d="m2 22 3-3"/>' +
+    '<path d="M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z"/>' +
+    '<path d="M7.5 13.5 10 11"/><path d="M10.5 16.5 13 14"/>' +
+    '<path d="m12 6 6 6 2.3-2.3a2.4 2.4 0 0 0 0-3.4l-2.6-2.6a2.4 2.4 0 0 0-3.4 0Z"/>',
+};
+const TRAY_SHAPES = {
+  ok: "link",
+  stuck: "alert",
+  missing: "link-off",
+  "vpn-down": "unplug",
+  settling: "link",
+  idle: "link",
+};
+const trayIcon = (color, shape) => `
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
     <rect x="6" y="6" width="244" height="244" rx="60" fill="${color}"/>
-    ${glyph(176, 3.3, "#FFFFFF")}
+    ${glyph(176, 3.3, "#FFFFFF", TRAY_GLYPHS[shape])}
   </svg>`;
 
 // --- rendering helpers -------------------------------------------------------
@@ -156,7 +179,8 @@ write(
   "relink.ico",
   ico([16, 24, 32, 48, 64, 128, 256].map((size) => ({ size, data: png(appIcon({ small: size <= 48 }), size) }))),
 );
-for (const [name, color] of Object.entries(STATUS)) write(`tray-${name}.rgba`, rgba(trayIcon(color), 32));
+for (const [name, color] of Object.entries(STATUS))
+  write(`tray-${name}.rgba`, rgba(trayIcon(color, TRAY_SHAPES[name]), 32));
 
 // README header and GitHub social preview (1280x640).
 const wordmark = (x, y, size, tag) => `

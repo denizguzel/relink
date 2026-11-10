@@ -44,7 +44,7 @@ test: linklibs
 snaps: linklibs
 	RUSTFLAGS="-L $(LINKLIBS)" cargo build
 	@mkdir -p target/snaps
-	@for s in ok welcome stuck missing settling paused host-detail vpn-down connections hosts settings activity stuck-en settings-en connections-en hosts-en activity-en update ok-light stuck-light stuck-en-light missing-light settling-light welcome-light paused-light host-detail-light vpn-down-light connections-light hosts-light settings-light activity-light update-light; do \
+	@for s in ok welcome stuck missing settling paused host-detail vpn-down connections hosts settings activity overview-details connections-technical settings-advanced help help-en zoom-125 zoom-85 stuck-en settings-en connections-en hosts-en activity-en update ok-light stuck-light stuck-en-light missing-light settling-light welcome-light paused-light host-detail-light vpn-down-light connections-light hosts-light settings-light activity-light update-light; do \
 	  VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json ./target/debug/relink --snap target/snaps/$$s.png --scene $$s >/dev/null 2>&1 && echo target/snaps/$$s.png; done
 
 check: build

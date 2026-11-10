@@ -56,32 +56,16 @@ fn check_label(pressed: u64, now: u64, checked_at: u64) -> CheckLabel {
     }
 }
 
-/// Fixing restarts the browser's network service. When nothing is wrong the
-/// button is quiet and needs a second press within a few seconds.
+/// Fixing restarts the browser's network service. It is offered only when
+/// something is actually stuck: restarting it on a healthy window would be a
+/// surprise, not a fix.
 fn fix_button(cx: &Ctx) -> El {
-    let needs_fix = needs_fix(cx.status);
-    let armed = cx.s.fix_armed_until > cx.s.now;
-    Button::new(if armed {
-        t!("fix_confirm")
-    } else {
-        t!("fix_now")
-    })
-    .icon(&icons::WRENCH)
-    .variant(if needs_fix || armed {
-        ButtonVariant::Contrast
-    } else {
-        ButtonVariant::Ghost
-    })
-    .on_press(move |s: &mut Ui| {
-        if needs_fix || s.fix_armed_until > s.now {
-            s.fix_armed_until = 0;
-            s.send(Cmd::FixNow);
-        } else {
-            s.fix_armed_until = s.now + 5;
-        }
-    })
-    .build(cx.k)
-    .key("fix")
+    Button::new(t!("fix_now"))
+        .icon(&icons::WRENCH)
+        .variant(ButtonVariant::Contrast)
+        .on_press(|s: &mut Ui| s.send(Cmd::FixNow))
+        .build(cx.k)
+        .key("fix")
 }
 
 /// "Check now" answers at once: the label says it is running, then that it
@@ -124,12 +108,27 @@ fn actions(cx: &Ctx) -> Option<El> {
         return None;
     }
     let mut r = row().key("actions").gap(8.0).pt(4.0);
-    if cx.status != Some(Status::Settling) && !cx.unfixable() {
+    if needs_fix(cx.status) && !cx.unfixable() {
         r = r.child(fix_button(cx));
     }
     Some(
         r.child(check_button(cx))
             .children(super::paused::button(cx)),
+    )
+}
+
+/// The last check, a quiet line under the status.
+fn meta(cx: &Ctx) -> Option<El> {
+    let at = cx.s.published.as_ref()?.checked_at;
+    Some(
+        text(format!(
+            "{}: {}",
+            t!("last_check"),
+            super::details::ago(cx.s, Some(at))
+        ))
+        .key("meta")
+        .font(cx.k.ty.small)
+        .color(cx.k.c.text_faint),
     )
 }
 
@@ -139,6 +138,8 @@ pub(super) fn hero(cx: &Ctx) -> El {
     row()
         .key("hero")
         .w_full()
+        .flex_wrap()
+        .items_start()
         .padding(20.0)
         .gap(18.0)
         .radius(12.0)
@@ -156,6 +157,7 @@ pub(super) fn hero(cx: &Ctx) -> El {
             col()
                 .key("copy")
                 .grow(1.0)
+                .min_w(260.0)
                 .shrink()
                 .gap(8.0)
                 .child(
@@ -175,9 +177,11 @@ pub(super) fn hero(cx: &Ctx) -> El {
                         .wrap()
                         .w_full(),
                 )
+                .children(meta(cx))
                 .children(progress(cx))
                 .children(actions(cx)),
         )
+        .child(el().key("flow-wrap").pt(2.0).child(super::flow::flow(cx)))
 }
 
 #[cfg(test)]
@@ -185,7 +189,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn only_real_problems_skip_the_confirmation() {
+    fn only_real_problems_offer_the_fix() {
         assert!(needs_fix(Some(Status::Stuck)) && needs_fix(Some(Status::MissingRoute)));
         for quiet in [
             None,

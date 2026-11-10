@@ -2,6 +2,8 @@
 //! needs a while to install its routes; until then missing routes are no news.
 //! Waiting lasts at least `MIN_SETTLE`, goes on while the missing set keeps
 //! shrinking (no progress for `QUIET` ends it) and never exceeds `MAX_SETTLE`.
+//! The same wait starts when hosts suddenly go missing while the VPN stays up
+//! (FortiClient reinstalls its routes in waves without the adapter dropping).
 
 use std::time::{Duration, Instant};
 
@@ -21,6 +23,10 @@ pub(super) struct Settle {
     most: usize,
     /// When the missing set last shrank.
     progress: Instant,
+    /// What the previous check saw: how many hosts were missing, and whether
+    /// it was waiting. A wait starts when the first goes from none to some.
+    missing_before: usize,
+    settling_before: bool,
 }
 
 impl Settle {
@@ -31,6 +37,8 @@ impl Settle {
             best: usize::MAX,
             most: 0,
             progress: Instant::now(),
+            missing_before: 0,
+            settling_before: false,
         }
     }
 
@@ -54,8 +62,21 @@ impl Settle {
             self.up_since = None;
         }
         self.was_up = Some(up);
-        let Some(since) = self.up_since else { return };
         let missing = report.missing_hosts().len();
+        // Routes vanished while the VPN stayed up: they are being reinstalled.
+        if up && missing > 0 && self.missing_before == 0 && !self.settling_before {
+            *self = Settle {
+                was_up: self.was_up,
+                up_since: Some(now),
+                progress: now,
+                ..Settle::new()
+            };
+        }
+        self.missing_before = missing;
+        let Some(since) = self.up_since else {
+            self.settling_before = false;
+            return;
+        };
         self.most = self.most.max(missing);
         report.settle_total = self.most;
         if missing < self.best {
@@ -65,6 +86,7 @@ impl Settle {
         let elapsed = now.duration_since(since);
         report.settling = elapsed < MAX_SETTLE
             && (elapsed < MIN_SETTLE || now.duration_since(self.progress) < QUIET);
+        self.settling_before = report.settling;
     }
 }
 
@@ -117,8 +139,23 @@ mod tests {
     }
 
     #[test]
-    fn a_vpn_that_was_already_up_at_startup_is_not_settling() {
-        assert_eq!(run(&[(0, true, 5), (5, true, 5)]), [false, false]);
+    fn a_vpn_that_was_already_up_at_startup_with_nothing_missing_is_not_settling() {
+        assert_eq!(run(&[(0, true, 0), (5, true, 0)]), [false, false]);
+    }
+
+    #[test]
+    fn routes_vanishing_while_the_vpn_stays_up_start_a_wait() {
+        let got = run(&[
+            (0, true, 0),
+            (30, true, 0),
+            (40, true, 6), // the routes went away
+            (50, true, 6),
+            (61, true, 6),  // 21 s without progress: a real problem
+            (70, true, 0),  // all back: counts as progress, still waiting
+            (95, true, 0),  // quiet for 25 s: done
+            (100, true, 2), // and again later
+        ]);
+        assert_eq!(got, [false, false, true, true, false, true, false, true]);
     }
 
     #[test]

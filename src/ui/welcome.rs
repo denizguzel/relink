@@ -1,6 +1,7 @@
-//! The first screen a new user sees: no sidebar, just what Re-Link does and
-//! the choices that matter (language, appearance, how many notifications, whether
-//! to start with the session). Dismissing it once shows the normal window from then on.
+//! The first screen a new user sees: no sidebar, just what Re-Link does, the
+//! few choices that matter (all editable later in Settings), and one line
+//! about the tray.
+//! Dismissing it once shows the normal window from then on.
 
 use rune::{El, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
@@ -51,6 +52,13 @@ pub fn screen(s: &Ui, k: &Kit) -> El {
                     text(t!("welcome_body"))
                         .font(k.ty.body)
                         .color(c.text_muted)
+                        .wrap()
+                        .w_full(),
+                )
+                .child(
+                    text(t!("welcome_tray"))
+                        .font(k.ty.small)
+                        .color(c.text_faint)
                         .wrap()
                         .w_full(),
                 ),

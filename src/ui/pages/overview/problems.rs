@@ -1,7 +1,7 @@
 //! What is wrong, per browser and per host. While the VPN's routes arrive the
 //! lists give way to one short line, so the page is not a wall of noise.
 
-use rune::{El, col, row, text};
+use rune::{El, row, text};
 
 use super::Ctx;
 use crate::t;
@@ -9,7 +9,12 @@ use crate::ui::parts::{panel, section};
 
 pub(super) fn problems(cx: &Ctx) -> Vec<El> {
     if cx.waiting() {
-        return vec![waiting_line(cx)];
+        return cx
+            .report
+            .filter(|r| !r.missing.is_empty())
+            .map(|_| waiting_line(cx))
+            .into_iter()
+            .collect();
     }
     let mut out = Vec::new();
     out.extend(stuck_panel(cx));
@@ -58,36 +63,24 @@ fn stuck_panel(cx: &Ctx) -> Vec<El> {
                 .px(16.0)
                 .py(11.0)
                 .gap(16.0)
+                .center_y()
                 .child(
-                    text(format!("{} · {}", st.conn.process, st.conn.pid))
-                        .font(k.ty.ui)
-                        .color(c.text_muted)
+                    text(st.conn.process.clone())
+                        .font(k.ty.ui_medium)
+                        .color(c.text_base)
                         .w(170.0),
                 )
                 .child(
-                    col()
+                    text(note)
+                        .font(k.ty.small)
+                        .color(c.text_muted)
                         .grow(1.0)
                         .shrink()
-                        .gap(4.0)
-                        .child(
-                            text(format!(
-                                "{} → {}:{}",
-                                st.conn.local, st.conn.remote, st.conn.remote_port
-                            ))
-                            .font(k.ty.ui_medium)
-                            .color(c.text_base),
-                        )
-                        .child(
-                            text(note)
-                                .font(k.ty.small)
-                                .color(c.text_muted)
-                                .wrap()
-                                .w_full(),
-                        ),
+                        .wrap(),
                 )
         })
         .collect();
-    vec![section(k, t!("kind_stuck")), panel("stuck", k, rows)]
+    vec![section(k, t!("stuck_section")), panel("stuck", k, rows)]
 }
 
 /// One row per host with its addresses beside it; long names wrap.
@@ -100,7 +93,7 @@ fn missing_panel(cx: &Ctx) -> Vec<El> {
     let rows = by_host
         .into_iter()
         .enumerate()
-        .map(|(i, (host, ips))| {
+        .map(|(i, (host, _ips))| {
             row()
                 .key(format!("missing-{i}"))
                 .w_full()
@@ -110,22 +103,20 @@ fn missing_panel(cx: &Ctx) -> Vec<El> {
                 .center_y()
                 .child(
                     text(host)
-                        .font(k.ty.ui)
+                        .font(k.ty.ui_medium)
                         .color(c.text_base)
                         .grow(1.0)
                         .shrink()
                         .wrap(),
                 )
                 .child(
-                    text(ips.join("  "))
-                        .font(k.ty.mono)
-                        .color(c.text_muted)
-                        .w(200.0)
-                        .wrap(),
+                    text(t!("missing_note"))
+                        .font(k.ty.small)
+                        .color(c.text_muted),
                 )
         })
         .collect();
-    vec![section(k, t!("kind_missing")), panel("missing", k, rows)]
+    vec![section(k, t!("missing_section")), panel("missing", k, rows)]
 }
 
 /// The first three names, comma-separated, and how many more there are.

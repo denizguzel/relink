@@ -131,6 +131,15 @@ pub struct Ui {
     /// Connections page filter (0 all, 1 stuck, 2 VPN, 3 internet) and activity filter (0 all, 1 warnings, 2 fixes).
     pub conn_filter: usize,
     pub event_filter: usize,
+    /// Whether the technical columns (addresses, ports, routes) show on the
+    /// Connections page; the simple list is the default.
+    pub conn_technical: bool,
+    /// Whether the technical details are open on the Overview page.
+    pub details_open: bool,
+    /// Whether the advanced group is open on the Settings page.
+    pub advanced_open: bool,
+    /// Whether the in-app help sheet is open.
+    pub help_open: bool,
     /// Unix time of the last "copy diagnostics" press (0 = never), for the button's feedback.
     pub copied_at: u64,
     /// Unix time of the last press on the sidebar's version (0 = never), for
@@ -146,11 +155,12 @@ pub struct Ui {
     pub place_polls: u32,
     pub window_saved: Option<crate::config::WindowGeom>,
     pub window_seen: Option<crate::config::WindowGeom>,
+    /// The window's content size in points, when known (Windows asks the OS),
+    /// which zoom needs to lay the content out.
+    pub window_size: Option<(f32, f32)>,
     /// Inputs of the settings' list editors.
     pub add_domain: TextEdit,
     pub add_host: TextEdit,
-    /// Until this unix time a second press of "Fix now" is confirmed (0 = not armed).
-    pub fix_armed_until: u64,
     /// Unix time of the last "Check now" press, for the button's feedback (0 = never).
     pub check_pressed_at: u64,
     /// Unix seconds, refreshed every second while the window shows.

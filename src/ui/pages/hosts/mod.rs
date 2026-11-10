@@ -31,18 +31,9 @@ fn tags(h: &HostRow, k: &Kit) -> El {
     tags
 }
 
-/// One host's row; pressing it opens or closes its detail.
+/// One host's row; pressing it opens or closes its detail (addresses and paths).
 fn host_row(i: usize, h: &HostRow, open: bool, k: &Kit) -> El {
     let c = &k.c;
-    let ips = if h.ips.is_empty() {
-        "—".to_string()
-    } else {
-        h.ips
-            .iter()
-            .map(|ip| ip.to_string())
-            .collect::<Vec<_>>()
-            .join("  ")
-    };
     let name = h.host.clone();
     row()
         .key(format!("host-{i}"))
@@ -66,13 +57,6 @@ fn host_row(i: usize, h: &HostRow, open: bool, k: &Kit) -> El {
                         .w_full(),
                 )
                 .child(tags(h, k)),
-        )
-        .child(
-            text(ips)
-                .font(k.ty.mono)
-                .color(c.text_muted)
-                .w(200.0)
-                .wrap(),
         )
         .child(chevron(open, k))
 }

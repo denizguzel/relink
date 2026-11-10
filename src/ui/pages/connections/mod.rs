@@ -4,7 +4,7 @@ mod group;
 mod names;
 
 use rune::{El, Tx, col, el, row, text};
-use rune_kit::{Kit, SegmentedControl};
+use rune_kit::{Kit, SegmentedControl, Switch};
 
 use super::pills::kind_pill;
 use crate::t;
@@ -40,7 +40,25 @@ pub fn connections(s: &Ui, k: &Kit) -> El {
     .build(k)
     .key("conn-filter");
 
-    let mut content = vec![filter];
+    let technical = Switch::new(s.conn_technical)
+        .label(t!("technical_details"))
+        .hide_label()
+        .on_toggle(|s: &mut Ui| s.conn_technical = !s.conn_technical)
+        .build(k);
+    let controls = row()
+        .key("conn-controls")
+        .w_full()
+        .gap(12.0)
+        .center_y()
+        .child(el().grow(1.0).child(filter))
+        .child(
+            text(t!("technical_details"))
+                .font(k.ty.small)
+                .color(c.text_muted),
+        )
+        .child(technical);
+
+    let mut content = vec![controls];
     let mut n = 0;
     if groups.is_empty() {
         content.push(panel(
@@ -54,30 +72,42 @@ pub fn connections(s: &Ui, k: &Kit) -> El {
             .iter()
             .map(|(conn, rt, kind)| {
                 n += 1;
-                let route = rt.map_or("—".to_string(), |r| match r.prefix_len {
-                    0 => format!("default · if {}", r.if_index),
-                    p => format!("/{p} · if {}", r.if_index),
-                });
-                row()
+                let label = names::label(&names::hosts_of(conn.remote, hosts));
+                let mut line = row()
                     .key(format!("conn-{n}"))
                     .w_full()
                     .px(16.0)
                     .py(10.0)
                     .gap(14.0)
                     .center_y()
-                    .child(el().w(96.0).child(kind_pill(*kind, k)))
-                    .child(
-                        text(format!("PID {}", conn.pid))
-                            .font(k.ty.small)
-                            .color(c.text_faint)
-                            .w(72.0),
-                    )
-                    .child(address(
-                        conn,
-                        names::label(&names::hosts_of(conn.remote, hosts)),
-                        k,
-                    ))
-                    .child(text(route).font(k.ty.small).color(c.text_muted))
+                    .child(el().w(96.0).child(kind_pill(*kind, k)));
+                if s.conn_technical {
+                    let route = rt.map_or("—".to_string(), |r| match r.prefix_len {
+                        0 => format!("default · if {}", r.if_index),
+                        p => format!("/{p} · if {}", r.if_index),
+                    });
+                    line = line
+                        .child(
+                            text(format!("PID {}", conn.pid))
+                                .font(k.ty.small)
+                                .color(c.text_faint)
+                                .w(72.0),
+                        )
+                        .child(address(conn, label, k))
+                        .child(text(route).font(k.ty.small).color(c.text_muted));
+                } else {
+                    let site =
+                        label.unwrap_or_else(|| format!("{}:{}", conn.remote, conn.remote_port));
+                    line = line.child(
+                        text(site)
+                            .font(k.ty.ui_medium)
+                            .color(c.text_base)
+                            .grow(1.0)
+                            .shrink()
+                            .wrap(),
+                    );
+                }
+                line
             })
             .collect();
         content.push(section(k, format!("{name} · {}", conns.len())));

@@ -1,9 +1,11 @@
 //! The window's layout: sidebar on the left, the current page on the right.
 
 use rune::{Cx, El, col, row};
+use rune_kit::Dialog;
 
-use super::{Page, Ui, pages, sidebar::sidebar, theme, welcome};
+use super::{Page, Ui, help, pages, sidebar::sidebar, theme, welcome, zoom};
 use crate::platform::{TitleBar, match_title_bar};
+use crate::t;
 
 pub fn view(s: &Ui, cx: &mut Cx<Ui>) -> El {
     let system_dark = cx.system_dark();
@@ -27,7 +29,10 @@ pub fn view(s: &Ui, cx: &mut Cx<Ui>) -> El {
 
     // A new user sees only the welcome screen, without the sidebar.
     if welcome::wanted(s) {
-        return rune_kit::root(welcome::screen(s, k), Vec::new());
+        return rune_kit::root(
+            zoom::wrap(welcome::screen(s, k), s.window_size, s.cfg.zoom_percent),
+            Vec::new(),
+        );
     }
 
     let page = match s.page {
@@ -59,5 +64,13 @@ pub fn view(s: &Ui, cx: &mut Cx<Ui>) -> El {
                 .clip_rounded(12.0)
                 .child(page),
         );
-    rune_kit::root(body, Vec::new())
+    let mut layers = Vec::new();
+    Dialog::new("help", t!("help_title"))
+        .width(540.0)
+        .fit()
+        .open(s.help_open)
+        .on_close(|s: &mut Ui| s.help_open = false)
+        .child(help::body(s, k))
+        .build(k, &mut layers);
+    rune_kit::root(zoom::wrap(body, s.window_size, s.cfg.zoom_percent), layers)
 }

@@ -5,6 +5,7 @@
 mod close;
 pub mod demo;
 mod diagnostics;
+mod help;
 pub mod icons;
 mod input;
 mod pages;
@@ -19,6 +20,7 @@ mod tests;
 mod theme;
 mod tick;
 mod welcome;
+pub mod zoom;
 
 pub use close::{HAS_TRAY, on_close};
 pub use diagnostics::{clean_name, diagnostics};

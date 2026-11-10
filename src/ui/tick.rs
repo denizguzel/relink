@@ -14,6 +14,7 @@ fn remember_window(s: &mut Ui) {
     let Some(now) = crate::platform::window_geometry() else {
         return;
     };
+    s.window_size = Some((now.width, now.height));
     if !s.window_restored {
         s.window_restored = true;
         let saved = crate::config::WindowGeom::load(&path).map(|g| (g.x, g.y));

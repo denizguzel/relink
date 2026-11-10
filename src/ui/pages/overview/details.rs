@@ -1,14 +1,16 @@
-//! The VPN adapter, last check and last fix.
+//! The details group: the counters, the VPN adapter, the last check and fix,
+//! and the latest events. Closed by default so the page stays one decision.
 
 use rune::El;
 
+use super::super::activity::event_row;
 use super::Ctx;
 use crate::t;
 use crate::ui::Ui;
-use crate::ui::parts::{info_row, panel};
+use crate::ui::parts::{self, info_row, panel, section};
 
 /// "12 s ago", "3 min ago" or "Never".
-fn ago(s: &Ui, at: Option<u64>) -> String {
+pub(super) fn ago(s: &Ui, at: Option<u64>) -> String {
     match at {
         None => t!("never"),
         Some(at) => {
@@ -32,7 +34,7 @@ fn last_fix_text(s: &Ui) -> String {
     }
 }
 
-pub(super) fn details(cx: &Ctx) -> El {
+fn details(cx: &Ctx) -> El {
     let vpn = match cx.report.and_then(|r| r.vpn.as_ref()) {
         Some(a) => format!(
             "{} · {}",
@@ -54,5 +56,33 @@ pub(super) fn details(cx: &Ctx) -> El {
             info_row("last-check", cx.k, t!("last_check"), ago(cx.s, checked_at)),
             info_row("last-fix", cx.k, t!("last_fix"), last_fix_text(cx.s)),
         ],
+    )
+}
+
+/// The recent events, always visible so the page is never a lone card.
+pub(super) fn recent(cx: &Ctx) -> Vec<El> {
+    let k = cx.k;
+    if cx.s.events.is_empty() {
+        return Vec::new();
+    }
+    let rows =
+        cx.s.events
+            .iter()
+            .take(5)
+            .enumerate()
+            .map(|(i, e)| event_row(&format!("recent-{i}"), e, k))
+            .collect();
+    vec![section(k, t!("recent_activity")), panel("recent", k, rows)]
+}
+
+/// The closed group that holds the technical facts of the last check.
+pub(super) fn disclosure(cx: &Ctx) -> El {
+    parts::disclosure(
+        "details",
+        cx.k,
+        t!("details"),
+        cx.s.details_open,
+        |s: &mut Ui| s.details_open = !s.details_open,
+        vec![details(cx)],
     )
 }

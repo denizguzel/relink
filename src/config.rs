@@ -29,6 +29,12 @@ pub struct Config {
     pub notifications: String,
     /// The welcome card on the overview has been dismissed.
     pub welcomed: bool,
+    /// Closing the window keeps Re-Link running in the tray (otherwise it quits).
+    pub close_to_tray: bool,
+    /// A start at login (`--hidden`) stays in the tray instead of opening the window.
+    pub start_hidden: bool,
+    /// How large the window's content is drawn, in percent (see `ui::zoom`).
+    pub zoom_percent: u32,
     /// The one-time "still running in the tray" notice has been shown.
     pub tray_notice_shown: bool,
     /// Ask GitHub now and then whether a newer release exists.
@@ -56,6 +62,9 @@ impl Default for Config {
             auto_fix: false,
             notifications: "problems".into(),
             welcomed: false,
+            close_to_tray: true,
+            start_hidden: true,
+            zoom_percent: 100,
             tray_notice_shown: false,
             check_updates: true,
             interval_seconds: 15,

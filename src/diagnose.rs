@@ -140,8 +140,10 @@ pub struct Report {
 impl Report {
     /// The VPN connected moments ago and its routes are still arriving, so
     /// missing routes (and the stuck connections they cause) are no news yet.
+    /// An empty missing set does not end the wait: host names are still being
+    /// resolved, so more addresses can show up as missing a moment later.
     pub fn waiting_for_routes(&self) -> bool {
-        self.settling && !self.missing.is_empty()
+        self.settling
     }
 
     /// The most severe condition in the report.
@@ -310,6 +312,23 @@ pub fn analyze(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn an_empty_missing_set_does_not_end_the_wait_after_the_vpn_connects() {
+        let mut r = Report {
+            vpn: Some(Adapter {
+                index: 20,
+                description: "Fortinet SSL VPN".into(),
+                up: true,
+                addrs: vec![],
+            }),
+            settling: true,
+            ..Report::default()
+        };
+        assert_eq!(r.status(), Status::Settling, "not healthy yet");
+        r.settling = false;
+        assert_eq!(r.status(), Status::Ok);
+    }
+
     use super::*;
 
     const HOME: Ipv4Addr = Ipv4Addr::new(192, 168, 1, 108);

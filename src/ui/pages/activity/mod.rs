@@ -104,27 +104,7 @@ pub fn activity(s: &Ui, k: &Kit) -> El {
         })
         .build(k)
         .key("open-log");
-    let copied = s.copied_at != 0 && s.now <= s.copied_at + 3;
-    let copy = Button::new(if copied {
-        t!("diagnostics_copied")
-    } else {
-        t!("copy_diagnostics")
-    })
-    .icon(&icons::COPY)
-    .variant(ButtonVariant::Neutral)
-    .on_press_tx(|s: &mut Ui, tx: &mut Tx| {
-        s.copied_at = s.now;
-        tx.copy(crate::ui::diagnostics(s));
-    })
-    .build(k)
-    .key("copy-diagnostics");
-    content.push(
-        row()
-            .key("activity-actions")
-            .gap(8.0)
-            .child(copy)
-            .child(open_log),
-    );
+    content.push(row().key("activity-actions").gap(8.0).child(open_log));
     page(
         "activity",
         k,

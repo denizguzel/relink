@@ -2,19 +2,19 @@
 //! the latest events. Each part lives in its own module.
 
 mod details;
+mod flow;
 mod hero;
 mod paused;
 mod problems;
 mod stats;
 
-use rune::{El, text};
+use rune::{El, col, row};
 use rune_kit::Kit;
 
-use super::activity::event_row;
 use crate::diagnose::{Report, Status};
 use crate::t;
 use crate::ui::Ui;
-use crate::ui::parts::{page, panel, section};
+use crate::ui::parts::page;
 
 /// What every part of the page reads: the window state and the latest report.
 struct Ctx<'a> {
@@ -59,30 +59,28 @@ impl<'a> Ctx<'a> {
 
 pub fn overview(s: &Ui, k: &Kit) -> El {
     let cx = Ctx::new(s, k);
-    let mut content = Vec::new();
-    content.push(hero::hero(&cx));
+    let mut content = vec![hero::hero(&cx)];
     content.extend(paused::banner(&cx));
-    content.extend([stats::stats(&cx), details::details(&cx)]);
-    content.extend(problems::problems(&cx));
-    if !s.events.is_empty() {
-        content.push(section(k, t!("recent_activity")));
-        let rows = s
-            .events
-            .iter()
-            .take(5)
-            .enumerate()
-            .map(|(i, e)| event_row(&format!("recent-{i}"), e, k))
-            .collect();
-        content.push(panel("recent", k, rows));
+    // Two columns when the window is wide enough, stacked when it is not.
+    let mut main = col().key("main").grow(3.0).min_w(320.0).gap(18.0);
+    main = main
+        .children(problems::problems(&cx))
+        .child(stats::stats(&cx))
+        .child(details::disclosure(&cx));
+    let mut columns = row().key("columns").w_full().gap(18.0).flex_wrap();
+    columns = columns.child(main);
+    let recent = details::recent(&cx);
+    if !recent.is_empty() {
+        columns = columns.child(
+            col()
+                .key("side")
+                .grow(2.0)
+                .min_w(280.0)
+                .gap(10.0)
+                .children(recent),
+        );
     }
-    content.push(
-        text(t!("manual_tip"))
-            .key("tip")
-            .font(k.ty.small)
-            .color(k.c.text_faint)
-            .wrap()
-            .w_full(),
-    );
+    content.push(columns);
     page("overview", k, t!("nav_overview"), None, content)
 }
 

@@ -1,10 +1,12 @@
 //! Shared building blocks: page scaffold, panels, rows, status colours.
 
 use rune::{Color, El, ScrollSpec, TextStyle, col, el, row, text};
-use rune_kit::{Kit, ScrollBar};
+use rune_kit::{Button, ButtonVariant, Kit, ScrollBar};
 
+use super::Ui;
 use crate::brand;
 use crate::diagnose::Status;
+use crate::ui::icons;
 
 pub const BRAND: TextStyle = TextStyle::new(15.0, 650.0).lh(20.0);
 pub const PAGE_TITLE: TextStyle = TextStyle::new(20.0, 650.0).lh(26.0);
@@ -205,4 +207,44 @@ pub fn empty(k: &Kit, msg: String) -> El {
         .px(16.0)
         .py(18.0)
         .child(text(msg).font(k.ty.body).color(k.c.text_muted))
+}
+
+/// A disclosure for the technical groups: a quiet button with a chevron that
+/// shows its content when open. The chevron is always visible, so the group
+/// reads as something that opens.
+pub fn disclosure(
+    key: &str,
+    k: &Kit,
+    title: String,
+    open: bool,
+    on_toggle: impl Fn(&mut Ui) + 'static,
+    content: Vec<El>,
+) -> El {
+    let icon = if open {
+        &icons::CHEVRON_DOWN
+    } else {
+        &icons::CHEVRON_RIGHT
+    };
+    let trigger = Button::new(title)
+        .icon(icon)
+        .variant(ButtonVariant::Ghost)
+        .expanded(open)
+        .on_press(on_toggle)
+        .build(k)
+        .key(format!("{key}-toggle"));
+    let mut group = col()
+        .key(key.to_string())
+        .w_full()
+        .gap(10.0)
+        .child(row().w_full().child(trigger));
+    if open {
+        group = group.child(
+            col()
+                .key(format!("{key}-content"))
+                .w_full()
+                .gap(14.0)
+                .children(content),
+        );
+    }
+    group
 }

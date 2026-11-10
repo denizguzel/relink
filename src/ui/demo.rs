@@ -142,7 +142,7 @@ fn publish(ui: &mut Ui, stuck: bool, missing: bool, vpn_up: bool) {
     ui.version = env!("CARGO_PKG_VERSION");
     ui.events.clear();
     for (ago, text, level) in [
-        (600, "Network service restarted (1 process)", Level::Good),
+        (600, "Connections refreshed (1 process)", Level::Good),
         (
             607,
             "Notification shown: stuck connection found",
@@ -153,7 +153,7 @@ fn publish(ui: &mut Ui, stuck: bool, missing: bool, vpn_up: bool) {
         (1210, "Re-Link 0.2.0 started", Level::Info),
         (
             86_400 + 3000,
-            "Network service restarted (1 process)",
+            "Connections refreshed (1 process)",
             Level::Good,
         ),
         (86_400 + 3300, "Status: stuck connections: 1", Level::Warn),
@@ -254,6 +254,45 @@ pub const SCENES: &[Scene] = &[
         tr();
         publish(u, true, false, true);
         u.page = Page::Activity
+    }),
+    ("overview-details", |u| {
+        tr();
+        publish(u, true, false, true);
+        u.details_open = true;
+    }),
+    ("connections-technical", |u| {
+        tr();
+        publish(u, true, false, true);
+        u.page = Page::Connections;
+        u.conn_technical = true;
+    }),
+    ("settings-advanced", |u| {
+        tr();
+        publish(u, false, false, true);
+        u.page = Page::Settings;
+        u.advanced_open = true;
+    }),
+    ("zoom-125", |u| {
+        crate::i18n::apply("en");
+        publish(u, true, false, true);
+        u.cfg.zoom_percent = 125;
+        u.window_size = Some((1000.0, 680.0));
+    }),
+    ("zoom-85", |u| {
+        crate::i18n::apply("en");
+        publish(u, true, false, true);
+        u.cfg.zoom_percent = 85;
+        u.window_size = Some((1000.0, 680.0));
+    }),
+    ("help", |u| {
+        tr();
+        publish(u, false, false, true);
+        u.help_open = true;
+    }),
+    ("help-en", |u| {
+        crate::i18n::apply("en");
+        publish(u, false, false, true);
+        u.help_open = true;
     }),
     ("stuck-en", |u| {
         crate::i18n::apply("en");

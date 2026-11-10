@@ -415,9 +415,10 @@ mod tests {
             "no fix or notice while routes arrive"
         );
         r.missing.clear();
+        r.settling = false;
         assert!(
             !e.on_report(&r, true, false, 40.0).is_empty(),
-            "once routes are in, the stuck one is handled"
+            "once the wait is over, the stuck one is handled"
         );
     }
 

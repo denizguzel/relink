@@ -62,6 +62,8 @@ fn prepare_files(paths: &Paths, cfg: &Config, cfg_err: &Option<String>, log: &Lo
 
 /// Runs the app until the user quits.
 pub fn run(paths: Paths, cfg: Config, cfg_err: Option<String>, hidden: bool) {
+    // A start at login stays in the tray unless the user asked for the window.
+    let hidden = hidden && cfg.start_hidden;
     // A second launch brings the running window forward and exits.
     if !rune::single_instance(APP_ID) {
         return;

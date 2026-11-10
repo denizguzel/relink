@@ -33,7 +33,8 @@ fn menu(status: Option<Status>, summary: &str, paused: bool) -> Vec<rune::TrayIt
         rune::TrayItem::action("open", t!("open_window")),
         rune::TrayItem::Separator,
     ];
-    if !matches!(status, Some(Status::VpnDown | Status::Settling)) {
+    // Restarting the network service is only offered when something is stuck.
+    if matches!(status, Some(Status::Stuck | Status::MissingRoute)) {
         items.push(rune::TrayItem::action("fix", t!("fix_now")));
     }
     if status != Some(Status::VpnDown) {
@@ -139,8 +140,17 @@ mod tests {
     }
 
     #[test]
-    fn healthy_menu_offers_fix_check_pause_and_quit() {
+    fn healthy_menu_offers_check_pause_and_quit() {
         let m = menu(Some(Status::Ok), "All good", false);
+        assert_eq!(
+            ids(&m),
+            ["status", "open", "-", "check", "-", "pause", "quit"]
+        );
+    }
+
+    #[test]
+    fn a_stuck_connection_offers_the_fix() {
+        let m = menu(Some(Status::Stuck), "2 stuck connections", false);
         assert_eq!(
             ids(&m),
             ["status", "open", "-", "fix", "check", "-", "pause", "quit"]

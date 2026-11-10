@@ -1,4 +1,5 @@
-//! The Settings page.
+//! The Settings page: the everyday choices first, the technical ones inside a
+//! closed "Advanced" group.
 
 mod list_editor;
 mod update;
@@ -22,6 +23,16 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
         .on_toggle(|s: &mut Ui| s.change(|c| c.auto_fix = !c.auto_fix))
         .build(k);
     let startup = controls::startup(s, k);
+    let close_to_tray = Switch::new(cfg.close_to_tray)
+        .label(t!("close_to_tray"))
+        .hide_label()
+        .on_toggle(|s: &mut Ui| s.change(|c| c.close_to_tray = !c.close_to_tray))
+        .build(k);
+    let start_hidden = Switch::new(cfg.start_hidden)
+        .label(t!("start_hidden"))
+        .hide_label()
+        .on_toggle(|s: &mut Ui| s.change(|c| c.start_hidden = !c.start_hidden))
+        .build(k);
     const INTERVALS: [u64; 5] = [5, 10, 15, 30, 60];
     let interval = SegmentedControl::new(
         &["5 s", "10 s", "15 s", "30 s", "60 s"],
@@ -43,6 +54,7 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
         .hide_label()
         .on_toggle(|s: &mut Ui| s.change(|c| c.check_updates = !c.check_updates))
         .build(k);
+
     let open_cfg = Button::new(t!("open_settings_file"))
         .icon(&icons::EXTERNAL_LINK)
         .variant(ButtonVariant::Neutral)
@@ -61,6 +73,20 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
             }
         })
         .build(k);
+    let copied = s.copied_at != 0 && s.now <= s.copied_at + 3;
+    let copy = Button::new(if copied {
+        t!("diagnostics_copied")
+    } else {
+        t!("copy_diagnostics")
+    })
+    .icon(&icons::COPY)
+    .variant(ButtonVariant::Ghost)
+    .on_press_tx(|s: &mut Ui, tx: &mut Tx| {
+        s.copied_at = s.now;
+        tx.copy(crate::ui::diagnostics(s));
+    })
+    .build(k)
+    .key("copy-diagnostics");
     let path = s
         .link
         .as_ref()
@@ -83,6 +109,22 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
             t!("startup"),
             Some(t!("startup_desc")),
             startup,
+        ),
+        setting_row(
+            "start-hidden",
+            k,
+            &icons::EYE_OFF,
+            t!("start_hidden"),
+            Some(t!("start_hidden_desc")),
+            start_hidden,
+        ),
+        setting_row(
+            "close-to-tray",
+            k,
+            &icons::PANEL_BOTTOM_CLOSE,
+            t!("close_to_tray"),
+            Some(t!("close_to_tray_desc")),
+            close_to_tray,
         ),
         setting_row(
             "interval",
@@ -111,32 +153,8 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
     ];
     // A release the check found says so right under its own setting.
     behavior.extend(update::notice(s, k));
-    let content = vec![
-        section(k, t!("settings_behavior")),
-        panel("behavior", k, behavior),
-        section(k, t!("settings_look")),
-        panel(
-            "language",
-            k,
-            vec![
-                setting_row(
-                    "lang",
-                    k,
-                    &icons::LANGUAGES,
-                    t!("settings_language"),
-                    None,
-                    lang,
-                ),
-                setting_row(
-                    "theme",
-                    k,
-                    &icons::SUN_MOON,
-                    t!("theme"),
-                    Some(t!("theme_desc")),
-                    controls::theme(s, k),
-                ),
-            ],
-        ),
+
+    let mut advanced = vec![
         section(k, t!("settings_sources")),
         panel(
             "sources",
@@ -173,9 +191,7 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
             |c| &mut c.hosts,
             |s| &mut s.add_host,
         ),
-        section(k, t!("settings_advanced")),
     ];
-    let mut content = content;
     if cfg!(target_os = "linux") {
         let on = s.published.as_ref().is_some_and(|p| p.helper);
         let badge = parts::pill(
@@ -183,7 +199,7 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
             parts::rgb(if on { brand::GREEN } else { brand::GRAY }),
             k,
         );
-        content.push(panel(
+        advanced.push(panel(
             "helper",
             k,
             vec![setting_row(
@@ -200,7 +216,7 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
             )],
         ));
     }
-    content.extend([panel(
+    advanced.push(panel(
         "advanced",
         k,
         vec![
@@ -229,8 +245,53 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
                 .py(12.0)
                 .gap(8.0)
                 .child(open_cfg)
-                .child(open_log),
+                .child(open_log)
+                .child(copy),
         ],
-    )]);
+    ));
+
+    let content = vec![
+        section(k, t!("settings_behavior")),
+        panel("behavior", k, behavior),
+        section(k, t!("settings_look")),
+        panel(
+            "language",
+            k,
+            vec![
+                setting_row(
+                    "lang",
+                    k,
+                    &icons::LANGUAGES,
+                    t!("settings_language"),
+                    None,
+                    lang,
+                ),
+                setting_row(
+                    "theme",
+                    k,
+                    &icons::SUN_MOON,
+                    t!("theme"),
+                    Some(t!("theme_desc")),
+                    controls::theme(s, k),
+                ),
+                setting_row(
+                    "zoom",
+                    k,
+                    &icons::ZOOM_IN,
+                    t!("zoom"),
+                    Some(t!("zoom_desc")),
+                    controls::zoom(s, k),
+                ),
+            ],
+        ),
+        parts::disclosure(
+            "advanced-group",
+            k,
+            t!("settings_advanced"),
+            s.advanced_open,
+            |s: &mut Ui| s.advanced_open = !s.advanced_open,
+            advanced,
+        ),
+    ];
     page("settings", k, t!("nav_settings"), None, content)
 }

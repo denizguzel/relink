@@ -12,12 +12,23 @@ use crate::t;
 /// the window quits and there is nothing to explain.
 pub static HAS_TRAY: AtomicBool = AtomicBool::new(false);
 
-/// The notice is shown once, and only when notifications are not switched off.
-pub fn should_show_tray_notice(cfg: &Config, has_tray: bool) -> bool {
-    has_tray && !cfg.tray_notice_shown && cfg.notifications != "off"
+/// Whether closing the window quits the app: the user asked for it. (Without
+/// a tray the app quits anyway, so this is only about a running tray.)
+pub fn closing_quits(cfg: &Config, has_tray: bool) -> bool {
+    has_tray && !cfg.close_to_tray
 }
 
-pub fn on_close(s: &mut Ui, _tx: &mut Tx) {
+/// The notice is shown once, only when closing really keeps Re-Link running,
+/// and only when notifications are not switched off.
+pub fn should_show_tray_notice(cfg: &Config, has_tray: bool) -> bool {
+    has_tray && cfg.close_to_tray && !cfg.tray_notice_shown && cfg.notifications != "off"
+}
+
+pub fn on_close(s: &mut Ui, tx: &mut Tx) {
+    if closing_quits(&s.cfg, HAS_TRAY.load(Ordering::Relaxed)) {
+        tx.quit();
+        return;
+    }
     if should_show_tray_notice(&s.cfg, HAS_TRAY.load(Ordering::Relaxed)) {
         s.change(|c| c.tray_notice_shown = true);
         crate::platform::notify(
@@ -45,6 +56,19 @@ mod tests {
     fn shown_once_when_there_is_a_tray() {
         assert!(should_show_tray_notice(&cfg(false, "problems"), true));
         assert!(!should_show_tray_notice(&cfg(true, "problems"), true));
+    }
+
+    #[test]
+    fn closing_quits_only_when_asked_and_a_tray_would_keep_it_alive() {
+        let mut c = Config::default();
+        assert!(!closing_quits(&c, true));
+        c.close_to_tray = false;
+        assert!(closing_quits(&c, true));
+        assert!(
+            !closing_quits(&c, false),
+            "no tray: the window system quits it"
+        );
+        assert!(!should_show_tray_notice(&c, true), "nothing keeps running");
     }
 
     #[test]

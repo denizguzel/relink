@@ -2,12 +2,13 @@
 //! notification level and the start-with-the-session switch (Settings and the
 //! welcome card).
 
-use rune::{El, Tx};
-use rune_kit::{Kit, SegmentedControl, Switch};
+use rune::{El, Tx, el, row, text};
+use rune_kit::{Button, ButtonVariant, Kit, SegmentedControl, Switch};
 
 use crate::t;
 use crate::ui::Ui;
 use crate::ui::theme::{THEMES, theme_index};
+use crate::ui::zoom;
 
 /// The notification levels in the order of the segmented control.
 pub const LEVELS: [&str; 3] = ["all", "problems", "off"];
@@ -73,6 +74,42 @@ pub fn startup(s: &Ui, k: &Kit) -> El {
             }
         })
         .build(k)
+}
+
+/// Zoom: smaller, the level (a press on it resets), larger.
+pub fn zoom(s: &Ui, k: &Kit) -> El {
+    let level = s.cfg.zoom_percent.clamp(zoom::MIN, zoom::MAX);
+    let step = |key: &'static str, label: &'static str, up: bool, enabled: bool| {
+        Button::new(label)
+            .variant(ButtonVariant::Neutral)
+            .disabled(!enabled)
+            .on_press(move |s: &mut Ui| {
+                let next = zoom::step(s.cfg.zoom_percent, up);
+                s.change(|c| c.zoom_percent = next);
+            })
+            .build(k)
+            .key(key)
+    };
+    let reset = Button::new(t!("zoom_reset"))
+        .variant(ButtonVariant::Ghost)
+        .disabled(level == 100)
+        .on_press(|s: &mut Ui| s.change(|c| c.zoom_percent = 100))
+        .build(k)
+        .key("zoom-reset");
+    row()
+        .key("zoom-controls")
+        .gap(8.0)
+        .center_y()
+        .child(step("zoom-out", "\u{2212}", false, level > zoom::MIN))
+        .child(
+            el().w(48.0).center().child(
+                text(format!("{level}%"))
+                    .font(k.ty.ui_medium)
+                    .color(k.c.text_base),
+            ),
+        )
+        .child(step("zoom-in", "+", true, level < zoom::MAX))
+        .child(reset)
 }
 
 #[cfg(test)]

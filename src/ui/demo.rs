@@ -233,7 +233,8 @@ pub const SCENES: &[Scene] = &[
     }),
     ("vpn-down", |u| {
         tr();
-        publish(u, false, false, false)
+        publish(u, false, false, false);
+        u.vpn_client = true;
     }),
     ("connections", |u| {
         tr();

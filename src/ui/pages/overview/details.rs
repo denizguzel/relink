@@ -9,17 +9,41 @@ use crate::t;
 use crate::ui::Ui;
 use crate::ui::parts::{self, info_row, panel, section};
 
-/// "12 s ago", "3 min ago" or "Never".
+/// How long ago, coarse on purpose: the text changes at most once a minute,
+/// so a value refreshed every second does not flicker.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Ago {
+    Never,
+    JustNow,
+    Minutes(u64),
+}
+
+pub(super) fn ago_of(now: u64, at: Option<u64>) -> Ago {
+    match at {
+        None => Ago::Never,
+        Some(at) => match now.saturating_sub(at) {
+            d if d < 60 => Ago::JustNow,
+            d => Ago::Minutes(d / 60),
+        },
+    }
+}
+
+/// "Just now", "3 min ago" or "Never".
 pub(super) fn ago(s: &Ui, at: Option<u64>) -> String {
+    match ago_of(s.now, at) {
+        Ago::Never => t!("never"),
+        Ago::JustNow => t!("just_now"),
+        Ago::Minutes(n) => t!("minutes_ago", n = n),
+    }
+}
+
+/// The clock time of a check, "01:21:55", for the details panel.
+fn clock(at: Option<u64>) -> String {
     match at {
         None => t!("never"),
         Some(at) => {
-            let d = s.now.saturating_sub(at);
-            if d < 90 {
-                t!("seconds_ago", n = d)
-            } else {
-                t!("minutes_ago", n = d / 60)
-            }
+            let (_, _, _, h, m, sec) = crate::platform::local_parts(at);
+            format!("{h:02}:{m:02}:{sec:02}")
         }
     }
 }
@@ -53,7 +77,7 @@ fn details(cx: &Ctx) -> El {
         cx.k,
         vec![
             info_row("vpn", cx.k, t!("vpn_adapter"), vpn),
-            info_row("last-check", cx.k, t!("last_check"), ago(cx.s, checked_at)),
+            info_row("last-check", cx.k, t!("last_check"), clock(checked_at)),
             info_row("last-fix", cx.k, t!("last_fix"), last_fix_text(cx.s)),
         ],
     )
@@ -85,4 +109,24 @@ pub(super) fn disclosure(cx: &Ctx) -> El {
         |s: &mut Ui| s.details_open = !s.details_open,
         vec![details(cx)],
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ago_changes_at_most_once_a_minute() {
+        assert_eq!(ago_of(100, None), Ago::Never);
+        for d in [0, 1, 30, 59] {
+            assert_eq!(ago_of(1000 + d, Some(1000)), Ago::JustNow, "{d}");
+        }
+        assert_eq!(ago_of(1060, Some(1000)), Ago::Minutes(1));
+        assert_eq!(ago_of(1000 + 179, Some(1000)), Ago::Minutes(2));
+        assert_eq!(
+            ago_of(5, Some(10)),
+            Ago::JustNow,
+            "a clock step back is not negative"
+        );
+    }
 }

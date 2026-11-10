@@ -101,6 +101,7 @@ pub fn run(paths: Paths, cfg: Config, cfg_err: Option<String>, hidden: bool) {
             version: VERSION,
             cfg,
             startup,
+            vpn_client: platform::vpn_client_available(),
             link: Some(link),
             now: relink::config::now_unix(),
             ..Ui::default()

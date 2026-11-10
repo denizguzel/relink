@@ -122,6 +122,10 @@ impl Monitor {
                     self.install_update();
                     continue;
                 }
+                Ok(Cmd::CheckUpdates) => {
+                    self.check_updates_now();
+                    continue;
+                }
                 Ok(Cmd::Reload) => {
                     self.cfg_mtime = fs::metadata(&self.paths.config)
                         .and_then(|m| m.modified())

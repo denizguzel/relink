@@ -24,6 +24,20 @@ pub enum Cmd {
     Resume,
     /// Download and install the release the update check found.
     InstallUpdate,
+    /// Look for a newer release now (the Settings button), whatever the setting.
+    CheckUpdates,
+}
+
+/// The state of a manual update check, for its button's label.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum UpdateCheck {
+    #[default]
+    Idle,
+    Running,
+    /// Unix time the check answered "no newer release".
+    UpToDate(u64),
+    /// Unix time the check failed (offline, proxy, rate limit).
+    Failed(u64),
 }
 
 /// The window's connection to the rest of the app.
@@ -124,9 +138,13 @@ pub struct Ui {
     /// A newer release than the running one, once the update check found it.
     pub update: Option<crate::update::Available>,
     pub update_stage: crate::update::Stage,
+    /// The manual update check started from Settings.
+    pub update_check: UpdateCheck,
     pub events: VecDeque<Event>,
     pub cfg: Config,
     pub startup: bool,
+    /// FortiClient is installed, so "Connect VPN" can open it.
+    pub vpn_client: bool,
     pub filter: TextEdit,
     /// Connections page filter (0 all, 1 stuck, 2 VPN, 3 internet) and activity filter (0 all, 1 warnings, 2 fixes).
     pub conn_filter: usize,

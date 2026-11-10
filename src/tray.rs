@@ -22,11 +22,18 @@ pub struct TrayHost {
     inner: Mutex<Inner>,
     handle: AppHandle<Ui>,
     cmd: Sender<Cmd>,
+    /// FortiClient is installed (checked once).
+    vpn_client: bool,
 }
 
 /// The tray menu. Fixing and checking mean nothing while the VPN is down (or
 /// just coming up); the pause entry flips to "resume" while paused.
-fn menu(status: Option<Status>, summary: &str, paused: bool) -> Vec<rune::TrayItem> {
+fn menu(
+    status: Option<Status>,
+    summary: &str,
+    paused: bool,
+    vpn_client: bool,
+) -> Vec<rune::TrayItem> {
     // The first line says what the icon's colour means.
     let mut items = vec![
         rune::TrayItem::action("status", summary).enabled(false),
@@ -39,6 +46,8 @@ fn menu(status: Option<Status>, summary: &str, paused: bool) -> Vec<rune::TrayIt
     }
     if status != Some(Status::VpnDown) {
         items.push(rune::TrayItem::action("check", t!("check_now")));
+    } else if vpn_client {
+        items.push(rune::TrayItem::action("connect-vpn", t!("connect_vpn")));
     }
     if items.len() > 3 {
         items.push(rune::TrayItem::Separator);
@@ -63,6 +72,7 @@ impl TrayHost {
             }),
             handle,
             cmd,
+            vpn_client: crate::platform::vpn_client_available(),
         });
         host.set(None, format!("Re-Link — {}", t!("status_checking")), false)
             .then_some(host)
@@ -81,7 +91,7 @@ impl TrayHost {
             && let Some(tray) = &inner.tray
         {
             tray.set_tooltip(tooltip);
-            tray.set_menu(menu(status, summary, paused));
+            tray.set_menu(menu(status, summary, paused, self.vpn_client));
             return true;
         }
         inner.tray = None; // removes the old icon first
@@ -93,7 +103,7 @@ impl TrayHost {
         );
         let spec = rune::TraySpec::new("relink", "Re-Link", icon)
             .tooltip(tooltip)
-            .menu(menu(status, summary, paused));
+            .menu(menu(status, summary, paused, self.vpn_client));
         match rune::Tray::new(spec, move |event| match event {
             rune::TrayEvent::Activate { .. } => handle.open(),
             rune::TrayEvent::Menu(id) => match id.as_str() {
@@ -103,6 +113,9 @@ impl TrayHost {
                 }
                 "check" => {
                     let _ = cmd.send(Cmd::CheckNow);
+                }
+                "connect-vpn" => {
+                    crate::platform::open_vpn_client();
                 }
                 "pause" => {
                     let _ = cmd.send(Cmd::Pause(crate::ui::pause::PAUSE_SECS));
@@ -141,7 +154,7 @@ mod tests {
 
     #[test]
     fn healthy_menu_offers_check_pause_and_quit() {
-        let m = menu(Some(Status::Ok), "All good", false);
+        let m = menu(Some(Status::Ok), "All good", false, false);
         assert_eq!(
             ids(&m),
             ["status", "open", "-", "check", "-", "pause", "quit"]
@@ -149,8 +162,17 @@ mod tests {
     }
 
     #[test]
+    fn vpn_down_offers_to_open_the_vpn_client_when_installed() {
+        let m = menu(Some(Status::VpnDown), "VPN is down", false, true);
+        assert_eq!(
+            ids(&m),
+            ["status", "open", "-", "connect-vpn", "-", "pause", "quit"]
+        );
+    }
+
+    #[test]
     fn a_stuck_connection_offers_the_fix() {
-        let m = menu(Some(Status::Stuck), "2 stuck connections", false);
+        let m = menu(Some(Status::Stuck), "2 stuck connections", false, false);
         assert_eq!(
             ids(&m),
             ["status", "open", "-", "fix", "check", "-", "pause", "quit"]
@@ -159,7 +181,7 @@ mod tests {
 
     #[test]
     fn the_first_line_is_a_disabled_status_line() {
-        let m = menu(Some(Status::Ok), "All good", false);
+        let m = menu(Some(Status::Ok), "All good", false, false);
         assert!(
             matches!(&m[0], rune::TrayItem::Action { id, label, enabled: false } if id == "status" && label == "All good")
         );
@@ -167,13 +189,13 @@ mod tests {
 
     #[test]
     fn no_vpn_hides_fix_and_check() {
-        let m = menu(Some(Status::VpnDown), "VPN is not connected", false);
+        let m = menu(Some(Status::VpnDown), "VPN is not connected", false, false);
         assert_eq!(ids(&m), ["status", "open", "-", "pause", "quit"]);
     }
 
     #[test]
     fn while_routes_arrive_only_check_is_offered() {
-        let m = menu(Some(Status::Settling), "Connecting", false);
+        let m = menu(Some(Status::Settling), "Connecting", false, false);
         assert_eq!(
             ids(&m),
             ["status", "open", "-", "check", "-", "pause", "quit"]
@@ -182,7 +204,7 @@ mod tests {
 
     #[test]
     fn pause_flips_to_resume_while_paused() {
-        assert!(ids(&menu(Some(Status::Ok), "x", true)).contains(&"resume".to_string()));
-        assert!(!ids(&menu(Some(Status::Ok), "x", true)).contains(&"pause".to_string()));
+        assert!(ids(&menu(Some(Status::Ok), "x", true, false)).contains(&"resume".to_string()));
+        assert!(!ids(&menu(Some(Status::Ok), "x", true, false)).contains(&"pause".to_string()));
     }
 }

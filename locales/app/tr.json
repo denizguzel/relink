@@ -35,7 +35,6 @@
   "last_check": "Son kontrol",
   "last_fix": "Son düzeltme",
   "never": "Hiç",
-  "seconds_ago": "{{n}} sn önce",
   "minutes_ago": "{{n}} dk önce",
   "stat_browser_conns": "Tarayıcı bağlantısı",
   "stat_via_vpn": "VPN üzerinden",
@@ -185,5 +184,11 @@
   "start_hidden_desc": "Oturumla birlikte başlarken pencereyi açmaz, tepside kalır.",
   "zoom": "Yakınlaştırma",
   "zoom_desc": "Penceredeki her şeyi büyütür ya da küçültür. Ctrl + ve Ctrl - da çalışır.",
-  "zoom_reset": "Sıfırla"
+  "zoom_reset": "Sıfırla",
+  "connect_vpn": "VPN'e bağlan",
+  "ev_vpn_client_failed": "FortiClient açılamadı",
+  "update_up_to_date": "Güncel ✓",
+  "update_check_failed": "Kontrol edilemedi",
+  "just_now": "az önce",
+  "watching_live": "Canlı izleniyor"
 }

@@ -35,7 +35,6 @@
   "last_check": "Last check",
   "last_fix": "Last fix",
   "never": "Never",
-  "seconds_ago": "{{n}}s ago",
   "minutes_ago": "{{n}} min ago",
   "stat_browser_conns": "Browser connections",
   "stat_via_vpn": "Through the VPN",
@@ -185,5 +184,11 @@
   "start_hidden_desc": "When it starts with the session, it stays in the tray instead of opening the window.",
   "zoom": "Zoom",
   "zoom_desc": "Makes everything in the window larger or smaller. Ctrl + and Ctrl - work too.",
-  "zoom_reset": "Reset"
+  "zoom_reset": "Reset",
+  "connect_vpn": "Connect VPN",
+  "ev_vpn_client_failed": "FortiClient could not be opened",
+  "update_up_to_date": "Up to date ✓",
+  "update_check_failed": "Could not check",
+  "just_now": "just now",
+  "watching_live": "Watching live"
 }

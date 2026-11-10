@@ -93,7 +93,10 @@ fn check_button(cx: &Ctx) -> El {
 fn progress(cx: &Ctx) -> Option<El> {
     let r = cx
         .report
-        .filter(|r| r.waiting_for_routes() && r.settle_total > 0)?;
+        .filter(|r| r.waiting_for_routes() && r.settle_total > 0)
+        // Everything arrived: the last seconds of the wait are only a
+        // confirmation, and a full bar that does not finish looks stuck.
+        .filter(|r| !r.missing.is_empty())?;
     let done = r.settle_total - r.missing_hosts().len().min(r.settle_total);
     let bar = rune_kit::Progress::new(Some(done as f32 / r.settle_total as f32))
         .label(t!("settle_progress", done = done, total = r.settle_total))
@@ -105,7 +108,7 @@ fn progress(cx: &Ctx) -> Option<El> {
 /// connects or when only Firefox is stuck (Re-Link cannot close its sockets).
 fn actions(cx: &Ctx) -> Option<El> {
     if cx.status == Some(Status::VpnDown) {
-        return None;
+        return connect_vpn(cx);
     }
     let mut r = row().key("actions").gap(8.0).pt(4.0);
     if needs_fix(cx.status) && !cx.unfixable() {
@@ -117,9 +120,55 @@ fn actions(cx: &Ctx) -> Option<El> {
     )
 }
 
-/// The last check, a quiet line under the status.
+/// While the VPN is down: open FortiClient on its connection page. Re-Link
+/// cannot connect by itself (the sign-in happens in the browser).
+fn connect_vpn(cx: &Ctx) -> Option<El> {
+    if !cx.s.vpn_client {
+        return None;
+    }
+    let button = Button::new(t!("connect_vpn"))
+        .icon(&icons::PLUG)
+        .variant(ButtonVariant::Contrast)
+        .on_press(|s: &mut Ui| {
+            if !crate::platform::open_vpn_client() {
+                s.push_event(t!("ev_vpn_client_failed"), crate::ui::Level::Warn);
+            }
+        })
+        .build(cx.k)
+        .key("connect-vpn");
+    Some(row().key("actions").gap(8.0).pt(4.0).child(button))
+}
+
+/// Whether Re-Link is looking every second (no VPN, or its routes are still
+/// arriving): then "when was the last check" means nothing.
+fn live(status: Option<Status>) -> bool {
+    matches!(status, Some(Status::VpnDown | Status::Settling))
+}
+
+/// A quiet line under the status: "Watching live" with a dot while checking
+/// every second, otherwise "Last check: just now" (changes once a minute).
 fn meta(cx: &Ctx) -> Option<El> {
+    let (k, c) = (cx.k, &cx.k.c);
     let at = cx.s.published.as_ref()?.checked_at;
+    if live(cx.status) {
+        return Some(
+            row()
+                .key("meta")
+                .gap(6.0)
+                .center_y()
+                .child(
+                    el().key("live-dot")
+                        .size(6.0, 6.0)
+                        .radius(3.0)
+                        .fill(status_color(cx.status)),
+                )
+                .child(
+                    text(t!("watching_live"))
+                        .font(k.ty.small)
+                        .color(c.text_faint),
+                ),
+        );
+    }
     Some(
         text(format!(
             "{}: {}",
@@ -127,8 +176,8 @@ fn meta(cx: &Ctx) -> Option<El> {
             super::details::ago(cx.s, Some(at))
         ))
         .key("meta")
-        .font(cx.k.ty.small)
-        .color(cx.k.c.text_faint),
+        .font(k.ty.small)
+        .color(c.text_faint),
     )
 }
 
@@ -187,6 +236,12 @@ pub(super) fn hero(cx: &Ctx) -> El {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_the_every_second_states_are_live() {
+        assert!(live(Some(Status::VpnDown)) && live(Some(Status::Settling)));
+        assert!(!live(Some(Status::Ok)) && !live(Some(Status::Stuck)) && !live(None));
+    }
 
     #[test]
     fn only_real_problems_offer_the_fix() {

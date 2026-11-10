@@ -54,6 +54,12 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
         .hide_label()
         .on_toggle(|s: &mut Ui| s.change(|c| c.check_updates = !c.check_updates))
         .build(k);
+    let updates = row()
+        .key("update-controls")
+        .gap(12.0)
+        .center_y()
+        .child(update::check_button(s, k))
+        .child(updates);
 
     let open_cfg = Button::new(t!("open_settings_file"))
         .icon(&icons::EXTERNAL_LINK)

@@ -10,6 +10,36 @@ use crate::ui::parts::setting_row;
 use crate::ui::{Cmd, Ui};
 use crate::update::Stage;
 
+/// How long "up to date" or "could not check" stays on the button.
+const SHOWN_SECS: u64 = 5;
+
+/// The manual check button's label, from its state and the clock.
+fn check_label(check: crate::ui::UpdateCheck, now: u64) -> String {
+    use crate::ui::UpdateCheck;
+    match check {
+        UpdateCheck::Running => t!("check_running"),
+        UpdateCheck::UpToDate(at) if now <= at + SHOWN_SECS => t!("update_up_to_date"),
+        UpdateCheck::Failed(at) if now <= at + SHOWN_SECS => t!("update_check_failed"),
+        _ => t!("check_now"),
+    }
+}
+
+/// "Check now" beside the "Check for updates" switch: looks for a newer
+/// release at once, even when the periodic check is off.
+pub(super) fn check_button(s: &Ui, k: &Kit) -> El {
+    let running = s.update_check == crate::ui::UpdateCheck::Running;
+    Button::new(check_label(s.update_check, s.now))
+        .icon(&icons::REFRESH_CW)
+        .variant(ButtonVariant::Ghost)
+        .disabled(running || matches!(s.update_stage, Stage::Installing))
+        .on_press(|s: &mut Ui| {
+            s.update_check = crate::ui::UpdateCheck::Running;
+            s.send(Cmd::CheckUpdates);
+        })
+        .build(k)
+        .key("update-check-now")
+}
+
 /// What the row offers for the current stage.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Offer {
@@ -70,6 +100,25 @@ pub(super) fn notice(s: &Ui, k: &Kit) -> Option<El> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_check_button_answers_then_goes_back() {
+        use crate::ui::UpdateCheck;
+        assert_eq!(check_label(UpdateCheck::Idle, 100), t!("check_now"));
+        assert_eq!(check_label(UpdateCheck::Running, 100), t!("check_running"));
+        assert_eq!(
+            check_label(UpdateCheck::UpToDate(100), 103),
+            t!("update_up_to_date")
+        );
+        assert_eq!(
+            check_label(UpdateCheck::UpToDate(100), 106),
+            t!("check_now")
+        );
+        assert_eq!(
+            check_label(UpdateCheck::Failed(100), 101),
+            t!("update_check_failed")
+        );
+    }
     use crate::ui::demo::SCENES;
     use crate::update::{Available, Download};
 

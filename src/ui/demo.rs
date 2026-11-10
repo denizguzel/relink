@@ -183,6 +183,7 @@ pub const SCENES: &[Scene] = &[
     ("update", |u| {
         tr();
         publish(u, false, false, true);
+        u.page = Page::Settings;
         u.update = Some(crate::update::Available {
             version: "0.3.0".into(),
             url: "https://github.com/denizguzel/relink/releases/tag/v0.3.0".into(),

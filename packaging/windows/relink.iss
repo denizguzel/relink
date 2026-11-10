@@ -15,6 +15,8 @@
 [Setup]
 AppId={{6F1D2B5A-3C47-4E0B-9A58-2D7E41C0B9A3}
 AppName=Re-Link
+; Apps & features shows this name; without it Inno appends "version <AppVersion>".
+AppVerName=Re-Link
 AppVersion={#AppVersion}
 AppPublisher=Re-Link
 AppPublisherURL=https://github.com/denizguzel/relink

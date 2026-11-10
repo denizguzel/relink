@@ -1,6 +1,7 @@
 //! The Settings page.
 
 mod list_editor;
+mod update;
 
 use rune::{El, Tx, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, SegmentedControl, Switch};
@@ -66,54 +67,53 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
         .map(|l| l.config_path.display().to_string())
         .unwrap_or_else(|| "relink.json".into());
 
+    let mut behavior = vec![
+        setting_row(
+            "auto-fix",
+            k,
+            &icons::ZAP,
+            t!("auto_fix"),
+            Some(t!("auto_fix_desc")),
+            auto_fix,
+        ),
+        setting_row(
+            "startup",
+            k,
+            &icons::POWER,
+            t!("startup"),
+            Some(t!("startup_desc")),
+            startup,
+        ),
+        setting_row(
+            "interval",
+            k,
+            &icons::TIMER,
+            t!("interval"),
+            Some(t!("interval_desc")),
+            interval,
+        ),
+        setting_row(
+            "notifications",
+            k,
+            &icons::BELL,
+            t!("notifications"),
+            Some(t!("notifications_desc")),
+            notifications,
+        ),
+        setting_row(
+            "updates",
+            k,
+            &icons::DOWNLOAD,
+            t!("check_updates"),
+            Some(t!("check_updates_desc")),
+            updates,
+        ),
+    ];
+    // A release the check found says so right under its own setting.
+    behavior.extend(update::notice(s, k));
     let content = vec![
         section(k, t!("settings_behavior")),
-        panel(
-            "behavior",
-            k,
-            vec![
-                setting_row(
-                    "auto-fix",
-                    k,
-                    &icons::ZAP,
-                    t!("auto_fix"),
-                    Some(t!("auto_fix_desc")),
-                    auto_fix,
-                ),
-                setting_row(
-                    "startup",
-                    k,
-                    &icons::POWER,
-                    t!("startup"),
-                    Some(t!("startup_desc")),
-                    startup,
-                ),
-                setting_row(
-                    "interval",
-                    k,
-                    &icons::TIMER,
-                    t!("interval"),
-                    Some(t!("interval_desc")),
-                    interval,
-                ),
-                setting_row(
-                    "notifications",
-                    k,
-                    &icons::BELL,
-                    t!("notifications"),
-                    Some(t!("notifications_desc")),
-                    notifications,
-                ),
-                setting_row(
-                    "updates",
-                    k,
-                    &icons::DOWNLOAD,
-                    t!("check_updates"),
-                    Some(t!("check_updates_desc")),
-                    updates,
-                ),
-            ],
-        ),
+        panel("behavior", k, behavior),
         section(k, t!("settings_look")),
         panel(
             "language",

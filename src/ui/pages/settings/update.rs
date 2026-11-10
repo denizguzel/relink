@@ -1,16 +1,17 @@
-//! The banner for a newer release: one click installs it.
+//! The row that says a newer release was found, with the button that installs
+//! it. It sits in Settings, under "Check for updates".
 
-use rune::{El, row, text};
-use rune_kit::{Button, ButtonVariant};
+use rune::{El, el};
+use rune_kit::{Button, ButtonVariant, Kit};
 
-use super::Ctx;
 use crate::t;
 use crate::ui::icons;
-use crate::ui::parts::leading_icon;
+use crate::ui::parts::setting_row;
 use crate::ui::{Cmd, Ui};
 use crate::update::Stage;
 
-/// What the banner says and offers for the current stage.
+/// What the row offers for the current stage.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Offer {
     /// "Update and restart": the release has a file for this platform.
     Install,
@@ -21,14 +22,14 @@ enum Offer {
     Busy,
 }
 
-fn offer(cx: &Ctx) -> Option<(String, Offer)> {
-    let found = cx.s.update.as_ref()?;
+fn offer(s: &Ui) -> Option<(String, Offer)> {
+    let found = s.update.as_ref()?;
     let banner = t!(
         "update_banner",
         version = found.version,
-        current = cx.s.version
+        current = s.version
     );
-    Some(match &cx.s.update_stage {
+    Some(match &s.update_stage {
         Stage::Installing => (t!("update_installing"), Offer::Busy),
         Stage::Failed(error) => (t!("update_failed", error = error), Offer::Page),
         Stage::Ready if found.download.is_some() => (banner, Offer::Install),
@@ -38,52 +39,32 @@ fn offer(cx: &Ctx) -> Option<(String, Offer)> {
 
 /// "A new version is available: 0.3.0 (you have 0.2.0)" with the button that
 /// installs it, once the update check found one.
-pub(super) fn banner(cx: &Ctx) -> Option<El> {
-    let (message, offer) = offer(cx)?;
-    let (k, c) = (cx.k, &cx.k.c);
-    let url = cx.s.update.as_ref()?.url.clone();
+pub(super) fn notice(s: &Ui, k: &Kit) -> Option<El> {
+    let (message, offer) = offer(s)?;
+    let url = s.update.as_ref()?.url.clone();
     let button = match offer {
-        Offer::Install => Some(
-            Button::new(t!("update_install"))
-                .icon(&icons::DOWNLOAD)
-                .variant(ButtonVariant::Neutral)
-                .on_press(|s: &mut Ui| s.send(Cmd::InstallUpdate))
-                .build(k)
-                .key("update-install"),
-        ),
-        Offer::Page => Some(
-            Button::new(t!("update_download"))
-                .icon(&icons::EXTERNAL_LINK)
-                .variant(ButtonVariant::Neutral)
-                .on_press(move |_: &mut Ui| crate::platform::open_url(&url))
-                .build(k)
-                .key("update-download"),
-        ),
-        Offer::Busy => None,
+        Offer::Install => Button::new(t!("update_install"))
+            .icon(&icons::DOWNLOAD)
+            .variant(ButtonVariant::Neutral)
+            .on_press(|s: &mut Ui| s.send(Cmd::InstallUpdate))
+            .build(k)
+            .key("update-install"),
+        Offer::Page => Button::new(t!("update_download"))
+            .icon(&icons::EXTERNAL_LINK)
+            .variant(ButtonVariant::Neutral)
+            .on_press(move |_: &mut Ui| crate::platform::open_url(&url))
+            .build(k)
+            .key("update-download"),
+        Offer::Busy => el(),
     };
-    let mut line = row()
-        .key("update-banner")
-        .w_full()
-        .px(16.0)
-        .py(10.0)
-        .gap(12.0)
-        .center_y()
-        .radius(10.0)
-        .fill(c.layer_01)
-        .border(1.0, c.border_muted)
-        .child(leading_icon(&icons::DOWNLOAD, k))
-        .child(
-            text(message)
-                .font(k.ty.ui)
-                .color(c.text_muted)
-                .grow(1.0)
-                .shrink()
-                .wrap(),
-        );
-    if let Some(button) = button {
-        line = line.child(button);
-    }
-    Some(line)
+    Some(setting_row(
+        "update-available",
+        k,
+        &icons::DOWNLOAD,
+        message,
+        None,
+        button,
+    ))
 }
 
 #[cfg(test)]
@@ -99,8 +80,7 @@ mod tests {
     }
 
     fn kind(ui: &Ui) -> Option<&'static str> {
-        let kit = rune_theme_opencode::kit(true);
-        offer(&Ctx::new(ui, kit)).map(|(_, o)| match o {
+        offer(ui).map(|(_, o)| match o {
             Offer::Install => "install",
             Offer::Page => "page",
             Offer::Busy => "busy",

@@ -133,6 +133,9 @@ pub struct Ui {
     pub event_filter: usize,
     /// Unix time of the last "copy diagnostics" press (0 = never), for the button's feedback.
     pub copied_at: u64,
+    /// Unix time of the last press on the sidebar's version (0 = never), for
+    /// its "copied" feedback.
+    pub version_copied_at: u64,
     /// The host whose detail is open on the Hosts page.
     pub expanded_host: Option<String>,
     /// The window position was put back once; the geometry last written; and

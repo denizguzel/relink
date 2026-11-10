@@ -1,12 +1,26 @@
 //! The sidebar: brand, page links with badges, quit, and the status footer.
 
-use rune::{El, Tx, col, row, text};
+use rune::{El, Tx, col, el, row, text};
 use rune_kit::{Kit, Sidebar, SidebarRow};
 
 use super::icons;
 use super::parts;
 use super::{Page, Ui, short_status};
 use crate::t;
+
+/// A small line in the sidebar footer that acts like a button (hover fill,
+/// keyboard focus) but reads as plain text.
+fn footer_link(k: &Kit, label: String, help: String, child: El) -> El {
+    el().role("button")
+        .label(label)
+        .help(help)
+        .focusable(true)
+        .focus_ring(2.0, 2.5, k.c.border_focus)
+        .py(2.0)
+        .radius(4.0)
+        .hover(k.c.layer_02)
+        .child(child)
+}
 
 pub fn sidebar(s: &Ui, k: &Kit) -> El {
     let c = &k.c;
@@ -41,6 +55,43 @@ pub fn sidebar(s: &Ui, k: &Kit) -> El {
         .on_select(|_: &mut Ui, tx: &mut Tx| tx.quit())
         .build(k)
         .key("quit");
+    let copied = s.version_copied_at != 0 && s.now <= s.version_copied_at + 2;
+    let version = format!("v{}", s.version);
+    let version_text = if copied {
+        t!("version_copied")
+    } else {
+        version.clone()
+    };
+    let mut version_line = row().key("sidebar-version").gap(8.0).center_y().child(
+        footer_link(
+            k,
+            version.clone(),
+            t!("copy_version"),
+            text(version_text).font(k.ty.small).color(if copied {
+                c.text_muted
+            } else {
+                c.text_faint
+            }),
+        )
+        .on_press_tx(move |s: &mut Ui, tx: &mut Tx| {
+            s.version_copied_at = s.now;
+            tx.copy(format!("v{}", s.version));
+        }),
+    );
+    if let Some(found) = &s.update {
+        let hint = t!("update_short", version = found.version);
+        version_line = version_line.child(
+            footer_link(
+                k,
+                hint.clone(),
+                t!("check_updates"),
+                text(hint)
+                    .font(k.ty.small)
+                    .color(parts::rgb(crate::brand::BLUE)),
+            )
+            .on_press(|s: &mut Ui| s.page = Page::Settings),
+        );
+    }
     let footer = col()
         .key("sidebar-footer")
         .pb(14.0)
@@ -57,11 +108,7 @@ pub fn sidebar(s: &Ui, k: &Kit) -> El {
                         .color(c.text_muted)
                         .wrap(),
                 )
-                .child(
-                    text(format!("v{}", s.version))
-                        .font(k.ty.small)
-                        .color(c.text_faint),
-                ),
+                .child(version_line),
         );
     Sidebar::new()
         .label("Re-Link")

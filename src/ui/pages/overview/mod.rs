@@ -6,7 +6,6 @@ mod hero;
 mod paused;
 mod problems;
 mod stats;
-mod update;
 
 use rune::{El, text};
 use rune_kit::Kit;
@@ -62,7 +61,6 @@ pub fn overview(s: &Ui, k: &Kit) -> El {
     let cx = Ctx::new(s, k);
     let mut content = Vec::new();
     content.push(hero::hero(&cx));
-    content.extend(update::banner(&cx));
     content.extend(paused::banner(&cx));
     content.extend([stats::stats(&cx), details::details(&cx)]);
     content.extend(problems::problems(&cx));

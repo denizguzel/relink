@@ -1,6 +1,6 @@
 [package]
 name = "relink"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 description = "Keeps browser connections on the FortiClient VPN split tunnel"
 publish = false

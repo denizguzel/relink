@@ -136,8 +136,8 @@ jobs:
           python3 scripts/package.py --version "${{ needs.check.outputs.version }}" --out dist/release \
             --windows-exe parts/windows/target/release/relink.exe \
             --installer parts/windows/dist/relink-${{ needs.check.outputs.version }}-windows-x64-setup.exe \
-            --linux-bin parts/linux/target/x86_64-unknown-linux-gnu/release/relink \
-            --helper parts/linux/target/x86_64-unknown-linux-gnu/release/relink-helper
+            --linux-bin parts/linux/relink \
+            --helper parts/linux/relink-helper
           ls -l dist/release
       - name: Attest build provenance
         if: startsWith(github.ref, 'refs/tags/v')

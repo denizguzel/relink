@@ -4,6 +4,28 @@ What changed in each Re-Link release, newest first. Each section is also that
 release's notes on GitHub: the release workflow publishes it, and
 `scripts/release.sh` refuses to tag a version that has none.
 
+## 0.7.0 — 2026-11-20
+
+### New
+
+- **Company addresses the VPN never routed.** When FortiClient sets up no
+  route for a company service, every connection to it goes over the home
+  network and its pages return 403, yet a fresh install saw nothing wrong: it
+  could not tell those addresses from public sites. While the VPN is up,
+  Re-Link now sends one HTTPS request to watched addresses that go over the
+  home network; when the company's load balancer turns it away (its own 403),
+  the address is known to belong on the VPN and Re-Link says to reconnect the
+  VPN. Public sites are asked again at most every 6 hours. `relink --check`
+  does the same, without saving anything.
+- **"Check now" says what it checked.** After a press, the Overview shows for a
+  few seconds how many browser connections and company addresses were checked
+  and what came out.
+
+### Fixes
+
+- The "addresses outside the VPN" texts no longer claim the IP address changed;
+  the VPN may also have never set up the route.
+
 ## 0.6.1 — 2026-11-20
 
 ### Fixes

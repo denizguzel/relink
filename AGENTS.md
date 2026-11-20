@@ -87,7 +87,8 @@ along a curve for the hero: `cd scripts/screenshots && npm install`, then
 ## Distribution and updates
 
 Releases are GitHub Releases built by `.github/workflows/release.yml` on a `v*`
-tag (`RELEASING.md`; `scripts/release.sh` bumps, commits and tags, never pushes;
+tag (`RELEASING.md`; the notes are the version's `CHANGELOG.md` section, printed by
+`scripts/changelog.sh`; `scripts/release.sh` checks them, bumps, commits and tags, never pushes;
 `scripts/package.py` makes every release file, locally and in CI). Windows
 installs per user only (`packaging/windows/relink.iss`, no administrator rights,
 no HKLM; CI checks this). The installer's AppId is written once, as

@@ -38,6 +38,9 @@ jobs:
           fi
           echo "version=$crate" >> "$GITHUB_OUTPUT"
           case "$crate" in *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT";; *) echo "prerelease=false" >> "$GITHUB_OUTPUT";; esac
+      - name: Release notes in CHANGELOG.md
+        if: github.ref_type == 'tag'
+        run: scripts/changelog.sh "$GITHUB_REF_NAME"
 
   windows:
     name: Windows build and installer
@@ -164,6 +167,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          flags="--generate-notes --verify-tag"
+          # The notes are the version's CHANGELOG.md section; GitHub appends
+          # the "Full Changelog" comparison link.
+          scripts/changelog.sh "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
+          flags="--notes-file $RUNNER_TEMP/notes.md --generate-notes --verify-tag"
           if [ "${{ needs.check.outputs.prerelease }}" = "true" ]; then flags="$flags --prerelease"; fi
           gh release create "$GITHUB_REF_NAME" dist/release/* --title "Re-Link ${GITHUB_REF_NAME#v}" $flags

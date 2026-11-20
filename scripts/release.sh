@@ -16,6 +16,8 @@ branch=$(git rev-parse --abbrev-ref HEAD)
 case "$branch" in master|main) ;; *) echo "release from master/main, not $branch" >&2; exit 1 ;; esac
 [ -z "$(git status --porcelain)" ] || { echo "commit or stash your changes first" >&2; exit 1; }
 git rev-parse "v$v" >/dev/null 2>&1 && { echo "tag v$v already exists" >&2; exit 1; }
+# The release's notes come from CHANGELOG.md: write them first.
+scripts/changelog.sh "$v" >/dev/null
 
 echo "== checks"
 make lint

@@ -16,16 +16,24 @@ first; pre-releases are never offered by the in-app updater.
 
 ## How
 
+First add the version's section to `CHANGELOG.md` (`## 0.3.0 — <date>`, then
+*New*, *Fixes* and *Notes* as needed: what users notice, and anything they must
+do, such as rerunning `install-linux.sh`) and commit it. That section becomes the
+release notes; `scripts/changelog.sh 0.3.0` prints them as GitHub will show them.
+
 ```sh
-scripts/release.sh 0.3.0     # checks, bumps Cargo.toml/Cargo.lock, commits, tags
+scripts/release.sh 0.3.0     # checks (notes included), bumps Cargo.toml/Cargo.lock, commits, tags
 git show v0.3.0              # look at it
 git push origin master v0.3.0
 ```
 
 The tag starts the workflow, which refuses a tag that differs from the
 `Cargo.toml` version, then builds, tests and publishes the release with
-automatically generated notes (grouped by pull request label, see
-`.github/release.yml`). A tag whose version has a `-` suffix becomes a
+the version's `CHANGELOG.md` section as its notes, followed by GitHub's
+generated part (pull requests grouped by label, see `.github/release.yml`, and the
+comparison link). A tag without a section stops the workflow before it builds.
+A pre-release without a section of its own uses the section of the version it
+leads to. A tag whose version has a `-` suffix becomes a
 pre-release. To rehearse without publishing, run the workflow by hand from
 the Actions tab ("Run workflow"): it builds everything and attaches the files
 to the run.

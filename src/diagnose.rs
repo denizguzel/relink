@@ -131,9 +131,6 @@ pub struct Report {
     pub hosts: Vec<(String, Vec<Ipv4Addr>, HostKind)>,
     /// The VPN connected moments ago: missing routes are expected for now.
     pub settling: bool,
-    /// Most hosts seen missing since the VPN came up: the baseline of the
-    /// progress shown while its routes arrive.
-    pub settle_total: usize,
     /// The route found for every address looked up (None: no route), so the
     /// Hosts page can show why a host is in its state.
     pub route_of: HashMap<Ipv4Addr, Option<Route>>,
@@ -166,6 +163,16 @@ impl Report {
         } else {
             Status::Ok
         }
+    }
+
+    /// Watched hosts that belong on the VPN: how many route through it now
+    /// (ready) and how many there are. The progress shown while its routes
+    /// arrive; counted afresh at every check, so names that move to new
+    /// addresses show up as not ready again.
+    pub fn route_progress(&self) -> (usize, usize) {
+        let count = |kind| self.hosts.iter().filter(|h| h.2 == kind).count();
+        let ready = count(HostKind::Vpn);
+        (ready, ready + count(HostKind::Missing))
     }
 
     /// Distinct process names owning stuck connections, in first-seen order.
@@ -483,6 +490,7 @@ mod tests {
         assert_eq!(kinds["public.example"], HostKind::Internet);
         assert_eq!(kinds["good.example"], HostKind::Vpn);
         assert_eq!(kinds["moved.example"], HostKind::Missing);
+        assert_eq!(r.route_progress(), (1, 3), "public sites are not counted");
 
         let s = Snapshot {
             adapters: adapters(false),

@@ -198,11 +198,13 @@ impl Monitor {
         )
     }
 
-    /// Whether the VPN is down or still installing its routes (per the last report).
-    fn fast_mode(&self, _cfg: &Config) -> bool {
-        self.last_report
-            .as_ref()
-            .is_none_or(|r| r.vpn.is_none() || r.settling)
+    /// How old the last name lookup may be (per the last report's VPN state).
+    fn name_refresh(&self) -> Option<std::time::Duration> {
+        let r = self.last_report.as_ref();
+        names::refresh(
+            r.is_some_and(|r| r.vpn.is_some()),
+            r.is_some_and(|r| r.settling),
+        )
     }
 
     /// Picks up edits made to relink.json in an editor.

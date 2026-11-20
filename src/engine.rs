@@ -149,10 +149,12 @@ impl Engine {
                 });
             }
         }
+        // Keyed by host, not address: a name that resolves to another
+        // address of the same load balancer is the same problem.
         if !can_route
             && missing
             && self.once(
-                format!("missing:{}", r.missing_signature()),
+                format!("missing:{}", r.missing_hosts().join(",")),
                 MISSING_REPEAT,
                 now,
             )
@@ -293,6 +295,28 @@ mod tests {
             e.on_report(&stuck([1, 1, 1, 1]), true, false, 31.0)[..],
             [Action::Fix { .. }]
         ));
+    }
+
+    #[test]
+    fn missing_hosts_moving_to_other_addresses_are_not_announced_again() {
+        let mut e = Engine::default();
+        assert_eq!(e.on_report(&missing(), false, false, 0.0).len(), 1);
+        let mut moved = missing();
+        moved.missing[0].ip = Ipv4Addr::new(5, 6, 7, 8);
+        assert!(e.on_report(&moved, false, false, 11.0).is_empty());
+        let mut more = moved.clone();
+        more.missing.push(Missing {
+            host: "b.example".into(),
+            ip: Ipv4Addr::new(9, 9, 9, 9),
+            route: route(),
+        });
+        assert_eq!(
+            e.on_report(&more, false, false, 20.0),
+            vec![Action::NotifyMissing {
+                hosts: vec!["a.example".into(), "b.example".into()]
+            }],
+            "another host is news"
+        );
     }
 
     #[test]

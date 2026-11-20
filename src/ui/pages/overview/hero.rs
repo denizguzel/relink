@@ -95,13 +95,16 @@ fn check_button(cx: &Ctx) -> El {
 fn progress(cx: &Ctx) -> Option<El> {
     let r = cx
         .report
-        .filter(|r| r.waiting_for_routes() && r.settle_total > 0)
+        .filter(|r| r.waiting_for_routes())
         // Everything arrived: the last seconds of the wait are only a
         // confirmation, and a full bar that does not finish looks stuck.
         .filter(|r| !r.missing.is_empty())?;
-    let done = r.settle_total - r.missing_hosts().len().min(r.settle_total);
-    let bar = rune_kit::Progress::new(Some(done as f32 / r.settle_total as f32))
-        .label(t!("settle_progress", done = done, total = r.settle_total))
+    let (done, total) = r.route_progress();
+    if total == 0 {
+        return None;
+    }
+    let bar = rune_kit::Progress::new(Some(done as f32 / total as f32))
+        .label(t!("settle_progress", done = done, total = total))
         .build(cx.k);
     Some(el().key("progress").w_full().pt(4.0).child(bar))
 }

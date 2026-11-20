@@ -19,9 +19,8 @@ impl Monitor {
         let watched = config::merge(&[&cfg.hosts, &bookmark_hosts]);
         // Without the VPN, or while its routes arrive, checks run every
         // second; resolving 50 names that often is pointless, so reuse the
-        // last answer for ten seconds.
-        let fast = self.fast_mode(&cfg);
-        let resolve_now = self.names.due(fast);
+        // last answer for a few seconds.
+        let resolve_now = self.names.due(self.name_refresh());
         let mut snap = match net::collect(&cfg.browsers, if resolve_now { &watched } else { &[] }) {
             Ok(mut s) => {
                 self.collect_error = None;

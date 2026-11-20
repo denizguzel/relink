@@ -215,7 +215,6 @@ pub const SCENES: &[Scene] = &[
         publish(u, false, true, true);
         if let Some(p) = u.published.as_mut() {
             p.report.settling = true;
-            p.report.settle_total = 4;
         }
     }),
     ("welcome", |u| {

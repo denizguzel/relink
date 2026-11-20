@@ -5,6 +5,7 @@
 mod actions;
 mod bookmark_cache;
 mod check;
+mod gate;
 mod log;
 mod names;
 mod notify;
@@ -68,6 +69,9 @@ pub struct Monitor {
     probe: Probe,
     /// The probe round in flight, if any.
     probe_rx: Option<std::sync::mpsc::Receiver<Option<probe::Round>>>,
+    gate: gate::Schedule,
+    /// The gate round in flight, if any.
+    gate_rx: Option<std::sync::mpsc::Receiver<Vec<(String, crate::gate::Answer)>>>,
     /// A check ran before this one, so a session's end is seen when it happens.
     session_watched: bool,
     /// The session start already warned about.
@@ -108,6 +112,8 @@ impl Monitor {
             last_check_unix: None,
             probe: Probe::default(),
             probe_rx: None,
+            gate: gate::Schedule::default(),
+            gate_rx: None,
             session_watched: false,
             session_warned: None,
         }

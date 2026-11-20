@@ -39,10 +39,12 @@ impl Monitor {
                 return;
             }
         };
+        self.collect_gate();
         snap.required = self.state.required(&cfg.hosts);
         let mut report = diagnose::analyze(&snap, &cfg.vpn_adapter_keywords, net::best_route);
         self.settle.observe(&mut report);
         self.watch_vpn(&mut report, &cfg);
+        self.start_gate(&report);
 
         if self.state.learn(&report.vpn_hosts, config::now_unix())
             && let Err(e) = self.state.save(&self.paths.state)

@@ -1,7 +1,8 @@
 //! Small OS integrations, one module each: autostart, opening files,
-//! local time, window geometry, notifications, the session lock and the VPN
+//! local time, window geometry, `curl`, notifications, the session lock and the VPN
 //! client.
 
+mod curl;
 mod desktop;
 mod geometry;
 mod install_entry;
@@ -17,6 +18,7 @@ mod titlebar;
 mod vpn_client;
 mod window;
 
+pub use curl::curl;
 pub use desktop::{attach_console, open_in_editor, open_url};
 pub use geometry::{MIN_SIZE, default_window_size, pick_size, plausible_size};
 pub use install_entry::sync_install_entry;

@@ -43,6 +43,14 @@ fn conn(local: Ipv4Addr, remote: [u8; 4]) -> Conn {
     }
 }
 
+/// The user just pressed "Check now" and the check came back.
+fn checked_now(u: &mut Ui) {
+    u.check_pressed_at = u.now;
+    if let Some(p) = u.published.as_mut() {
+        p.checked_at = u.now;
+    }
+}
+
 fn publish(ui: &mut Ui, stuck: bool, missing: bool, vpn_up: bool) {
     ui.cfg.welcomed = true;
     let now = crate::config::now_unix();
@@ -209,6 +217,16 @@ pub const SCENES: &[Scene] = &[
     ("missing", |u| {
         tr();
         publish(u, false, true, true)
+    }),
+    ("checked", |u| {
+        tr();
+        publish(u, false, false, true);
+        checked_now(u);
+    }),
+    ("checked-stuck", |u| {
+        tr();
+        publish(u, true, false, true);
+        checked_now(u);
     }),
     ("settling", |u| {
         tr();

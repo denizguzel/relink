@@ -1,6 +1,7 @@
 //! The Overview page: the status hero, what is wrong, the VPN session,
 //! counters, details and the latest events. Each part lives in its own module.
 
+mod check;
 mod details;
 mod flow;
 mod hero;

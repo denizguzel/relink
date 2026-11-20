@@ -10,6 +10,7 @@ pub mod brand;
 pub mod config;
 pub mod diagnose;
 pub mod engine;
+pub mod gate;
 pub mod helper;
 pub mod i18n;
 pub mod monitor;

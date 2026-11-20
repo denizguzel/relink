@@ -5,7 +5,7 @@ use std::process::ExitCode;
 
 use relink::config::{self, Config, Paths, State};
 use relink::diagnose::{self, Report, Status};
-use relink::{VERSION, bookmarks, net, ui};
+use relink::{VERSION, bookmarks, gate, net, ui};
 
 pub fn help() {
     println!(
@@ -53,8 +53,22 @@ pub fn check(paths: &Paths, cfg: &Config, cfg_err: Option<String>, verbose: bool
         }
     };
     snap.required = state.required(&cfg.hosts);
-    let r = diagnose::analyze(&snap, &cfg.vpn_adapter_keywords, net::best_route);
+    let mut r = diagnose::analyze(&snap, &cfg.vpn_adapter_keywords, net::best_route);
+    // Home-network hosts the load balancer turns away belong on the VPN
+    // (read-only: one HTTPS request each, nothing is saved).
+    let gated: Vec<String> = gate::ask_all(&gate::targets(&r, &snap.required))
+        .into_iter()
+        .filter(|(_, a)| *a == gate::Answer::Gated)
+        .map(|(h, _)| h)
+        .collect();
+    if !gated.is_empty() {
+        snap.required.extend(gated.iter().cloned());
+        r = diagnose::analyze(&snap, &cfg.vpn_adapter_keywords, net::best_route);
+    }
     println!("config: {}", paths.config.display());
+    if !gated.is_empty() {
+        println!("turned away outside the VPN: {}", gated.join(", "));
+    }
     println!(
         "browser connections: {}, watched hosts: {} (resolved {})",
         snap.conns.len(),

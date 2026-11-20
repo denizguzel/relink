@@ -39,25 +39,6 @@ fn needs_fix(status: Option<Status>) -> bool {
     matches!(status, Some(Status::Stuck | Status::MissingRoute))
 }
 
-/// The text of the "Check now" button: it answers at once, says it is running,
-/// then that it finished, and goes back to normal after a few seconds.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum CheckLabel {
-    Idle,
-    Running,
-    Done,
-}
-
-fn check_label(pressed: u64, now: u64, checked_at: u64) -> CheckLabel {
-    if pressed == 0 || now > pressed + 4 {
-        CheckLabel::Idle
-    } else if checked_at < pressed {
-        CheckLabel::Running
-    } else {
-        CheckLabel::Done
-    }
-}
-
 /// Fixing restarts the browser's network service. It is offered only when
 /// something is actually stuck: restarting it on a healthy window would be a
 /// surprise, not a fix.
@@ -68,27 +49,6 @@ fn fix_button(cx: &Ctx) -> El {
         .on_press(|s: &mut Ui| s.send(Cmd::FixNow))
         .build(cx.k)
         .key("fix")
-}
-
-/// "Check now" answers at once: the label says it is running, then that it
-/// finished, and goes back after a few seconds.
-fn check_button(cx: &Ctx) -> El {
-    let pressed = cx.s.check_pressed_at;
-    let checked = cx.s.published.as_ref().map_or(0, |p| p.checked_at);
-    let label = match check_label(pressed, cx.s.now, checked) {
-        CheckLabel::Idle => t!("check_now"),
-        CheckLabel::Running => t!("check_running"),
-        CheckLabel::Done => t!("check_done"),
-    };
-    Button::new(label)
-        .icon(&icons::REFRESH_CW)
-        .variant(ButtonVariant::Neutral)
-        .on_press(|s: &mut Ui| {
-            s.check_pressed_at = s.now;
-            s.send(Cmd::CheckNow);
-        })
-        .build(cx.k)
-        .key("check")
 }
 
 /// While the VPN's routes arrive: how many of the hosts are ready.
@@ -122,14 +82,14 @@ fn actions(cx: &Ctx) -> Option<El> {
         if cx.s.vpn_client {
             r = r.child(connect_vpn_button(cx));
         }
-        return Some(r.child(check_button(cx)));
+        return Some(r.child(super::check::button(cx)));
     }
     let mut r = row().key("actions").gap(8.0).pt(4.0);
     if needs_fix(cx.status) && !cx.unfixable() {
         r = r.child(fix_button(cx));
     }
     Some(
-        r.child(check_button(cx))
+        r.child(super::check::button(cx))
             .children(super::paused::button(cx)),
     )
 }
@@ -174,6 +134,9 @@ fn live(status: Option<Status>) -> bool {
 fn meta(cx: &Ctx) -> Option<El> {
     let (k, c) = (cx.k, &cx.k.c);
     let at = cx.s.published.as_ref()?.checked_at;
+    if let Some(result) = super::check::result(cx) {
+        return Some(result);
+    }
     if live(cx.status) {
         return Some(
             row()
@@ -278,26 +241,6 @@ mod tests {
         ] {
             assert!(!needs_fix(quiet), "{quiet:?}");
         }
-    }
-
-    #[test]
-    fn check_button_runs_then_confirms_then_returns() {
-        assert_eq!(check_label(0, 100, 90), CheckLabel::Idle, "never pressed");
-        assert_eq!(
-            check_label(100, 101, 90),
-            CheckLabel::Running,
-            "no check finished since the press"
-        );
-        assert_eq!(
-            check_label(100, 101, 100),
-            CheckLabel::Done,
-            "a check finished at or after the press"
-        );
-        assert_eq!(
-            check_label(100, 105, 104),
-            CheckLabel::Idle,
-            "back to normal after a few seconds"
-        );
     }
 
     #[test]

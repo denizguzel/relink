@@ -71,6 +71,7 @@ fn status_texts_follow_the_status() {
     assert_eq!(scene("ok").status(), Some(Status::Ok));
     assert_eq!(scene("vpn-down").status(), Some(Status::VpnDown));
     assert_eq!(scene("missing").status(), Some(Status::MissingRoute));
+    assert_eq!(scene("tunnel-dead").status(), Some(Status::TunnelDead));
     assert_eq!(scene("settling").status(), Some(Status::Settling));
 }
 

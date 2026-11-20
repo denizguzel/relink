@@ -27,6 +27,6 @@ pub use diagnostics::{clean_name, diagnostics};
 pub use input::on_key;
 pub use shell::view;
 pub use state::*;
-pub use status::{short_status, status_text};
-pub use tick::poll;
+pub use status::{duration_text, short_status, status_text};
+pub use tick::{bring_forward, poll};
 pub use welcome::wanted as welcome_wanted;

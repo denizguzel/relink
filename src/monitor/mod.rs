@@ -8,9 +8,14 @@ mod check;
 mod log;
 mod names;
 mod notify;
+mod pace;
 mod pause;
+mod probe;
+mod session;
 mod settle;
+mod unlock;
 mod updates;
+mod vpn;
 
 use std::fs;
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
@@ -22,7 +27,9 @@ use rune::AppHandle;
 use self::bookmark_cache::BookmarkCache;
 use self::names::NameCache;
 use self::pause::Pause;
+use self::probe::Probe;
 use self::settle::Settle;
+use self::unlock::UnlockWatch;
 use self::updates::Updates;
 use crate::config::{self, Config, Paths, State};
 use crate::diagnose::{Report, Status};
@@ -53,6 +60,18 @@ pub struct Monitor {
     collect_error: Option<String>,
     helper: Helper,
     updates: Updates,
+    unlock: UnlockWatch,
+    /// When the VPN was last seen going down (None while it is up).
+    vpn_down_since: Option<Instant>,
+    /// Unix time of the last check, to notice a sleep in between.
+    last_check_unix: Option<u64>,
+    probe: Probe,
+    /// The probe round in flight, if any.
+    probe_rx: Option<std::sync::mpsc::Receiver<Option<probe::Round>>>,
+    /// A check ran before this one, so a session's end is seen when it happens.
+    session_watched: bool,
+    /// The session start already warned about.
+    session_warned: Option<u64>,
 }
 
 impl Monitor {
@@ -84,6 +103,13 @@ impl Monitor {
             collect_error: None,
             helper: Helper::default(),
             updates: Updates::new(Instant::now()),
+            unlock: UnlockWatch::default(),
+            vpn_down_since: None,
+            last_check_unix: None,
+            probe: Probe::default(),
+            probe_rx: None,
+            session_watched: false,
+            session_warned: None,
         }
     }
 
@@ -98,14 +124,16 @@ impl Monitor {
 
     /// Runs until the window side goes away.
     pub fn run(mut self, rx: Receiver<Cmd>) {
-        let mut wait = Duration::ZERO;
+        // When the next check is due. Commands that do not check (pause,
+        // update) keep it, so they never push the next check back.
+        let mut due = Instant::now();
         loop {
-            match rx.recv_timeout(wait) {
+            match rx.recv_timeout(due.saturating_duration_since(Instant::now())) {
                 Ok(Cmd::CheckNow) | Err(RecvTimeoutError::Timeout) => {}
                 Ok(Cmd::FixNow) => {
                     let action = self.engine.user_fix(self.mono());
                     self.act(action);
-                    wait = Duration::from_secs(3); // let Chromium bring the service back
+                    due = Instant::now() + Duration::from_secs(3); // let Chromium bring the service back
                     continue;
                 }
                 Ok(Cmd::Pause(secs)) => {
@@ -138,18 +166,36 @@ impl Monitor {
             self.maybe_check_updates();
             self.check();
             let cfg = self.cfg.lock().unwrap().clone();
-            wait = match self.engine.next_deadline() {
+            let mut wait = match self.engine.next_deadline() {
                 Some(t) => cfg
                     .interval()
                     .min(Duration::from_secs_f64((t - self.mono()).max(0.5))),
                 None => cfg.interval(),
             };
             // The chosen interval is for a connected, settled VPN; while it is
-            // down or its routes arrive, look every second.
-            if self.fast_mode(&cfg) {
-                wait = wait.min(Duration::from_secs(1));
+            // down or its routes arrive, look more often.
+            if let Some(cap) = self.pace() {
+                wait = wait.min(cap);
             }
+            due = Instant::now() + wait;
         }
+    }
+
+    /// The longest wait the VPN's state allows (per the last report).
+    fn pace(&mut self) -> Option<Duration> {
+        let report = self.last_report.as_ref();
+        let up = report.is_some_and(|r| r.vpn.is_some());
+        if up || report.is_none() {
+            self.vpn_down_since = None;
+        } else if self.vpn_down_since.is_none() {
+            self.vpn_down_since = Some(Instant::now());
+        }
+        pace::cap(
+            report.is_some(),
+            up,
+            report.is_some_and(|r| r.settling),
+            self.vpn_down_since.map(|t| t.elapsed()),
+        )
     }
 
     /// Whether the VPN is down or still installing its routes (per the last report).
@@ -193,6 +239,11 @@ impl Monitor {
         if let Some(tray) = &self.tray {
             let paused = self.pause.active(Instant::now());
             let mut tooltip = format!("Re-Link — {}", short_status(self.last_report.as_ref()));
+            let up = self.last_report.as_ref().is_some_and(|r| r.vpn.is_some());
+            if let Some(since) = self.state.vpn_up_since.filter(|_| up) {
+                let d = crate::ui::duration_text(config::now_unix().saturating_sub(since));
+                tooltip.push_str(&format!(" · {}", t!("vpn_up_for", duration = d)));
+            }
             if paused {
                 tooltip.push_str(&format!(" · {}", t!("paused_short")));
             }

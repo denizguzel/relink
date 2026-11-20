@@ -43,6 +43,7 @@ impl Monitor {
         snap.required = self.state.required(&cfg.hosts);
         let mut report = diagnose::analyze(&snap, &cfg.vpn_adapter_keywords, net::best_route);
         self.settle.observe(&mut report);
+        self.watch_vpn(&mut report, &cfg);
 
         if self.state.learn(&report.vpn_hosts, config::now_unix())
             && let Err(e) = self.state.save(&self.paths.state)
@@ -128,6 +129,8 @@ impl Monitor {
             learned: self.state.vpn_hosts.len(),
             checked_at: config::now_unix(),
             helper,
+            vpn_since: self.state.vpn_up_since,
+            session_limit: super::session::limit(&self.state.vpn_sessions),
         };
         self.handle
             .update(move |s, _| s.published = Some(published));

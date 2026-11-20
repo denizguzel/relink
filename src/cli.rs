@@ -66,7 +66,7 @@ pub fn check(paths: &Paths, cfg: &Config, cfg_err: Option<String>, verbose: bool
         print_details(&r, cfg);
     }
     match r.status() {
-        Status::Stuck | Status::MissingRoute => ExitCode::from(3),
+        Status::Stuck | Status::MissingRoute | Status::TunnelDead => ExitCode::from(3),
         _ => ExitCode::SUCCESS,
     }
 }

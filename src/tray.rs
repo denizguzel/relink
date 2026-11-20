@@ -44,10 +44,12 @@ fn menu(
     if matches!(status, Some(Status::Stuck | Status::MissingRoute)) {
         items.push(rune::TrayItem::action("fix", t!("fix_now")));
     }
+    // Down, or connected but dead: reconnecting is what helps.
+    if matches!(status, Some(Status::VpnDown | Status::TunnelDead)) && vpn_client {
+        items.push(rune::TrayItem::action("connect-vpn", t!("connect_vpn")));
+    }
     if status != Some(Status::VpnDown) {
         items.push(rune::TrayItem::action("check", t!("check_now")));
-    } else if vpn_client {
-        items.push(rune::TrayItem::action("connect-vpn", t!("connect_vpn")));
     }
     if items.len() > 3 {
         items.push(rune::TrayItem::Separator);
@@ -105,9 +107,9 @@ impl TrayHost {
             .tooltip(tooltip)
             .menu(menu(status, summary, paused, self.vpn_client));
         match rune::Tray::new(spec, move |event| match event {
-            rune::TrayEvent::Activate { .. } => handle.open(),
+            rune::TrayEvent::Activate { .. } => crate::ui::bring_forward(&handle),
             rune::TrayEvent::Menu(id) => match id.as_str() {
-                "open" => handle.open(),
+                "open" => crate::ui::bring_forward(&handle),
                 "fix" => {
                     let _ = cmd.send(Cmd::FixNow);
                 }
@@ -199,6 +201,29 @@ mod tests {
         assert_eq!(
             ids(&m),
             ["status", "open", "-", "check", "-", "pause", "quit"]
+        );
+    }
+
+    #[test]
+    fn a_dead_tunnel_offers_to_reconnect_and_check() {
+        let m = menu(
+            Some(Status::TunnelDead),
+            "VPN is connected but not working",
+            false,
+            true,
+        );
+        assert_eq!(
+            ids(&m),
+            [
+                "status",
+                "open",
+                "-",
+                "connect-vpn",
+                "check",
+                "-",
+                "pause",
+                "quit"
+            ]
         );
     }
 

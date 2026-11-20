@@ -49,15 +49,15 @@ fn main() -> ExitCode {
         return cli::fix(&cfg);
     }
 
-    // Started by an update: let the old version finish quitting first, then
-    // delete it.
+    // Started by an update: let the old version finish quitting first (ending
+    // it if it hangs), then delete it.
     let updated = args
         .iter()
         .position(|a| a == relink::update::WAIT_ARG)
         .and_then(|i| args.get(i + 1))
         .and_then(|p| p.parse().ok());
     if let Some(pid) = updated {
-        platform::wait_for_exit(pid, std::time::Duration::from_secs(20));
+        platform::end_previous(pid, std::time::Duration::from_secs(20));
     }
     relink::update::remove_old();
 

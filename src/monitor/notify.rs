@@ -11,7 +11,8 @@ static NOTIFY_LEVEL: Mutex<String> = Mutex::new(String::new());
 static PAUSED: AtomicBool = AtomicBool::new(false);
 
 /// Whether a notification of `kind` passes the level: "off" shows none,
-/// "problems" only stuck connections and missing routes, anything else all.
+/// "problems" only stuck connections, missing routes, a lost or dead VPN and
+/// the session warning, anything else all.
 /// While paused nothing is shown.
 fn allowed(level: &str, kind: &str, paused: bool) -> bool {
     if paused {
@@ -19,7 +20,7 @@ fn allowed(level: &str, kind: &str, paused: bool) -> bool {
     }
     match level {
         "off" => false,
-        "problems" => matches!(kind, "stuck" | "missing"),
+        "problems" => matches!(kind, "stuck" | "missing" | "vpn" | "session"),
         _ => true,
     }
 }
@@ -37,6 +38,7 @@ pub(super) fn notify(kind: &str, title: &str, body: &str, action: Option<&str>) 
     let n = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let label = match action {
         Some("fix") => t!("fix_now"),
+        Some("connect-vpn") => t!("connect_vpn"),
         _ => t!("open_window"),
     };
     crate::platform::notify(
@@ -65,6 +67,7 @@ mod tests {
     fn levels_filter_notification_kinds() {
         assert!(allowed("all", "fixed", false) && allowed("all", "route", false));
         assert!(allowed("problems", "stuck", false) && allowed("problems", "missing", false));
+        assert!(allowed("problems", "vpn", false) && allowed("problems", "session", false));
         assert!(!allowed("problems", "fixed", false) && !allowed("problems", "route", false));
         assert!(!allowed("off", "stuck", false));
     }
@@ -72,7 +75,7 @@ mod tests {
     #[test]
     fn a_pause_silences_every_level() {
         for level in ["all", "problems", "off"] {
-            for kind in ["stuck", "missing", "fixed", "route"] {
+            for kind in ["stuck", "missing", "vpn", "fixed", "route"] {
                 assert!(!allowed(level, kind, true), "{level}/{kind}");
             }
         }

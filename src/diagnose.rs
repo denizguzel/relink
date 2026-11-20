@@ -71,6 +71,8 @@ pub enum Status {
     Settling,
     Stuck,
     MissingRoute,
+    /// The VPN is connected but nothing gets through it (probes time out).
+    TunnelDead,
 }
 
 /// How one connection looks, for the Connections page.
@@ -135,6 +137,9 @@ pub struct Report {
     /// The route found for every address looked up (None: no route), so the
     /// Hosts page can show why a host is in its state.
     pub route_of: HashMap<Ipv4Addr, Option<Route>>,
+    /// The VPN looks connected but carries no traffic: set by the monitor's
+    /// reachability probes, not by `analyze`.
+    pub tunnel_dead: bool,
 }
 
 impl Report {
@@ -150,6 +155,8 @@ impl Report {
     pub fn status(&self) -> Status {
         if self.waiting_for_routes() {
             Status::Settling
+        } else if self.tunnel_dead && self.vpn.is_some() {
+            Status::TunnelDead
         } else if !self.missing.is_empty() {
             Status::MissingRoute
         } else if !self.stuck.is_empty() {

@@ -24,8 +24,8 @@ pub struct Config {
     pub theme: String,
     /// Restart the browser network service without asking.
     pub auto_fix: bool,
-    /// Which notifications to show: "all", "problems" (stuck connections and
-    /// missing routes only) or "off".
+    /// Which notifications to show: "all", "problems" (stuck connections,
+    /// missing routes and a VPN lost while locked) or "off".
     pub notifications: String,
     /// The welcome card on the overview has been dismissed.
     pub welcomed: bool,
@@ -39,6 +39,15 @@ pub struct Config {
     pub tray_notice_shown: bool,
     /// Ask GitHub now and then whether a newer release exists.
     pub check_updates: bool,
+    /// When the VPN dropped while the session was locked, at unlock: "notify"
+    /// (a notification that opens FortiClient), "open" (open it at once) or "off".
+    pub vpn_after_unlock: String,
+    /// Try a few company addresses now and then to notice a VPN that looks
+    /// connected but carries no traffic.
+    pub check_tunnel: bool,
+    /// Warn shortly before the VPN session is likely to end, once Re-Link has
+    /// learned that sessions end after a fixed time.
+    pub session_warning: bool,
     /// How often the network state is checked.
     pub interval_seconds: u64,
     /// Executable names whose connections are inspected.
@@ -67,6 +76,9 @@ impl Default for Config {
             zoom_percent: 100,
             tray_notice_shown: false,
             check_updates: true,
+            vpn_after_unlock: "notify".into(),
+            check_tunnel: true,
+            session_warning: true,
             interval_seconds: 15,
             browsers: default_browsers(),
             hosts: vec![],
@@ -204,6 +216,10 @@ pub struct State {
     /// Host -> last time (Unix seconds) one of its addresses routed through
     /// the VPN.
     pub vpn_hosts: BTreeMap<String, u64>,
+    /// When the current VPN session started (Unix seconds), while it is up.
+    pub vpn_up_since: Option<u64>,
+    /// How long the latest VPN sessions lasted, in seconds, oldest first.
+    pub vpn_sessions: Vec<u64>,
 }
 
 impl State {

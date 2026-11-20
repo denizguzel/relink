@@ -6,7 +6,7 @@
 //   node split.mjs <dark.png> <light.png> <out.png>
 //
 // The inputs are the headless renders from `make snaps` (`stuck-en.png` and
-// `stuck-light.png`), so the hero always matches the current build.
+// `stuck-en-light.png`), so the hero always matches the current build.
 import { Resvg } from "@resvg/resvg-js";
 import { readFileSync, writeFileSync } from "node:fs";
 

@@ -1,5 +1,5 @@
-//! The in-app help sheet: what Re-Link does, what the tray colours mean, and
-//! the diagnostics a bug report needs.
+//! The in-app help sheet: what Re-Link does (fixing, notifying, watching the
+//! VPN), what the tray colours mean, and the diagnostics a bug report needs.
 
 use rune::{El, ScrollSpec, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, ScrollBar};
@@ -89,6 +89,9 @@ pub fn body(s: &Ui, k: &Kit) -> El {
                         vec![
                             tip(&icons::WRENCH, t!("help_fix"), k),
                             tip(&icons::BELL, t!("help_notify"), k),
+                            tip(&icons::ZAP_OFF, t!("help_tunnel"), k),
+                            tip(&icons::LOCK_OPEN, t!("help_away"), k),
+                            tip(&icons::CLOCK, t!("help_session"), k),
                         ],
                     )
                     .mt(14.0),

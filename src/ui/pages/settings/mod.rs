@@ -157,6 +157,12 @@ pub fn settings(s: &Ui, k: &Kit) -> El {
             updates,
         ),
     ];
+    // Before the update row: the VPN choices sit with the notifications.
+    let at = behavior.len() - 1;
+    behavior.insert(at, controls::session_row("session-warning", s, k));
+    if let Some(unlock) = controls::unlock_row("vpn-after-unlock", s, k) {
+        behavior.insert(at, unlock);
+    }
     // A release the check found says so right under its own setting.
     behavior.extend(update::notice(s, k));
 

@@ -1,11 +1,12 @@
-//! The Overview page: the status hero, counters, details, what is wrong and
-//! the latest events. Each part lives in its own module.
+//! The Overview page: the status hero, what is wrong, the VPN session,
+//! counters, details and the latest events. Each part lives in its own module.
 
 mod details;
 mod flow;
 mod hero;
 mod paused;
 mod problems;
+mod session;
 mod stats;
 
 use rune::{El, col, row};
@@ -65,6 +66,7 @@ pub fn overview(s: &Ui, k: &Kit) -> El {
     let mut main = col().key("main").grow(3.0).min_w(320.0).gap(18.0);
     main = main
         .children(problems::problems(&cx))
+        .children(session::card(&cx))
         .child(stats::stats(&cx))
         .child(details::disclosure(&cx));
     let mut columns = row().key("columns").w_full().gap(18.0).flex_wrap();

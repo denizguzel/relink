@@ -29,7 +29,10 @@ pub fn tray_rgba(status: Option<Status>) -> &'static [u8] {
         Some(Status::VpnDown) => include_bytes!("../assets/brand/tray-vpn-down.rgba"),
         Some(Status::Settling) => include_bytes!("../assets/brand/tray-settling.rgba"),
         Some(Status::Stuck) => include_bytes!("../assets/brand/tray-stuck.rgba"),
-        Some(Status::MissingRoute) => include_bytes!("../assets/brand/tray-missing.rgba"),
+        // Red as well: a dead tunnel breaks the same company pages.
+        Some(Status::MissingRoute | Status::TunnelDead) => {
+            include_bytes!("../assets/brand/tray-missing.rgba")
+        }
     }
 }
 
@@ -40,7 +43,7 @@ pub fn status_color(status: Option<Status>) -> Rgb {
         Some(Status::Ok) => GREEN,
         Some(Status::VpnDown) => GRAY,
         Some(Status::Stuck) => AMBER,
-        Some(Status::MissingRoute) => RED,
+        Some(Status::MissingRoute | Status::TunnelDead) => RED,
     }
 }
 
@@ -48,13 +51,14 @@ pub fn status_color(status: Option<Status>) -> Rgb {
 mod tests {
     use super::*;
 
-    const ALL: [Option<Status>; 6] = [
+    const ALL: [Option<Status>; 7] = [
         None,
         Some(Status::Ok),
         Some(Status::VpnDown),
         Some(Status::Settling),
         Some(Status::Stuck),
         Some(Status::MissingRoute),
+        Some(Status::TunnelDead),
     ];
 
     #[test]

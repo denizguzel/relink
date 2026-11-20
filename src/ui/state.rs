@@ -121,6 +121,10 @@ pub struct Published {
     pub checked_at: u64,
     /// Whether the Linux root helper is installed and allowed.
     pub helper: bool,
+    /// When the current VPN session started (Unix seconds).
+    pub vpn_since: Option<u64>,
+    /// After how long VPN sessions have been ending, once learned (seconds).
+    pub session_limit: Option<u64>,
 }
 
 pub const MAX_EVENTS: usize = 300;
@@ -165,9 +169,11 @@ pub struct Ui {
     pub version_copied_at: u64,
     /// The host whose detail is open on the Hosts page.
     pub expanded_host: Option<String>,
-    /// The window position was put back once; the geometry last written; and
-    /// the one seen on the previous tick (it is saved once it stops changing).
+    /// The window position was put back since the window (re)appeared; its
+    /// saved size was asked for (the step before); the geometry last written;
+    /// and the one seen on the previous tick (it is saved once it stops changing).
     pub window_restored: bool,
+    pub window_resized: bool,
     /// Ticks spent waiting for the window to exist, to look quickly only at
     /// the start (a tray-only start has no window for a long time).
     pub place_polls: u32,

@@ -12,7 +12,7 @@ closing the browser.
 
 ## Screenshots
 
-<p align="center"><img src="assets/screenshots/overview.png" alt="Overview: two stuck browser connections, the browser, VPN and company path, the counters and recent activity" width="880"></p>
+<p align="center"><img src="assets/screenshots/overview.png" alt="Overview: two stuck browser connections, the browser, VPN and company path, how long the VPN has been up, the counters and recent activity" width="880"></p>
 
 <p align="center">
 <img src="assets/screenshots/connections.png" alt="Browser connections marked Problem, On VPN or Internet" width="435">
@@ -20,7 +20,7 @@ closing the browser.
 </p>
 
 <p align="center">
-<img src="assets/screenshots/settings.png" alt="Settings: automatic fix, start and close behaviour, check interval, notifications and updates" width="435">
+<img src="assets/screenshots/settings.png" alt="Settings: automatic fix, start and close behaviour, check interval, notifications, after lock or sleep, the session warning and updates" width="435">
 <img src="assets/screenshots/activity.png" alt="Activity log grouped by day" width="435">
 </p>
 
@@ -36,6 +36,12 @@ the stale connections and the DNS cache are dropped. No host list is needed.
   or fixes on its own with *Fix automatically*.
 - Watches the company hosts in your bookmarks and in `relink.json`; when a route
   is missing it asks you to reconnect the VPN and tidies up afterwards.
+- Notices a VPN that says *connected* but carries no traffic (common after sleep
+  or a network switch) by trying a few company addresses now and then.
+- When the VPN dropped while the computer was locked or asleep, it tells you the
+  moment you are back (Windows: one click opens FortiClient).
+- Shows how long the VPN has been up and, once it has learned that sessions end
+  after a fixed time (8 hours, say), warns about 10 minutes before.
 - No administrator rights, PowerShell or .NET. The installer is per user.
 - Closing the window leaves Re-Link in the tray.
 
@@ -65,7 +71,7 @@ download; in-app updates are not affected.
 ## Using it
 
 The tray icon shows the state: green when healthy, grey without a VPN, orange for
-a stuck connection, red for a missing route. Click it for **Fix now**, **Check
+a stuck connection, red for a missing route or a VPN that carries no traffic. Click it for **Fix now**, **Check
 now**, pause and quit; the window holds the settings, the browser connections, the
 watched hosts and the activity log. To try the fix, turn the VPN off and on again
 while Re-Link runs.
@@ -78,8 +84,11 @@ report), `relink --fix`, `relink --version`.
 `relink.json` lives in `%APPDATA%\Re-Link` (Linux: `~/.config/relink`); the
 portable zip keeps it beside the program. It is created on first run with every
 option, and edits apply without a restart. The window covers the common ones: fix
-automatically, start with Windows, check interval, notifications, language, theme,
-watched hosts and the company domains found in your bookmarks.
+automatically, start with Windows, check interval, notifications, what to do when
+the VPN dropped while the computer was locked or asleep (a notification, or on
+Windows FortiClient opened at once), the warning before the VPN session ends,
+language, theme, watched hosts and the company domains found in your bookmarks.
+`checkTunnel: false` turns off the traffic check.
 
 ## Linux
 

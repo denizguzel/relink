@@ -63,44 +63,7 @@ pub fn screen(s: &Ui, k: &Kit) -> El {
                         .w_full(),
                 ),
         )
-        .child(panel(
-            "welcome-choices",
-            k,
-            vec![
-                setting_row(
-                    "welcome-language",
-                    k,
-                    &icons::LANGUAGES,
-                    t!("settings_language"),
-                    None,
-                    controls::language(s, k),
-                ),
-                setting_row(
-                    "welcome-theme",
-                    k,
-                    &icons::SUN_MOON,
-                    t!("theme"),
-                    Some(t!("theme_desc")),
-                    controls::theme(s, k),
-                ),
-                setting_row(
-                    "welcome-notify",
-                    k,
-                    &icons::BELL,
-                    t!("notifications"),
-                    Some(t!("notifications_desc")),
-                    controls::notifications(s, k),
-                ),
-                setting_row(
-                    "welcome-startup",
-                    k,
-                    &icons::POWER,
-                    t!("startup"),
-                    Some(t!("startup_desc")),
-                    controls::startup(s, k),
-                ),
-            ],
-        ))
+        .child(panel("welcome-choices", k, choices(s, k)))
         .child(row().key("welcome-actions").child(done));
     col()
         .key("welcome")
@@ -109,6 +72,50 @@ pub fn screen(s: &Ui, k: &Kit) -> El {
         .fill(c.bg_base)
         .center()
         .child(el().key("welcome-center").child(card))
+}
+
+/// The choices on the card, the VPN ones as in Settings.
+fn choices(s: &Ui, k: &Kit) -> Vec<El> {
+    let mut rows = vec![
+        setting_row(
+            "welcome-language",
+            k,
+            &icons::LANGUAGES,
+            t!("settings_language"),
+            None,
+            controls::language(s, k),
+        ),
+        setting_row(
+            "welcome-theme",
+            k,
+            &icons::SUN_MOON,
+            t!("theme"),
+            Some(t!("theme_desc")),
+            controls::theme(s, k),
+        ),
+        setting_row(
+            "welcome-notify",
+            k,
+            &icons::BELL,
+            t!("notifications"),
+            Some(t!("notifications_desc")),
+            controls::notifications(s, k),
+        ),
+        setting_row(
+            "welcome-startup",
+            k,
+            &icons::POWER,
+            t!("startup"),
+            Some(t!("startup_desc")),
+            controls::startup(s, k),
+        ),
+    ];
+    // After the notifications: what they are about.
+    rows.insert(3, controls::session_row("welcome-session", s, k));
+    if let Some(unlock) = controls::unlock_row("welcome-unlock", s, k) {
+        rows.insert(3, unlock);
+    }
+    rows
 }
 
 #[cfg(test)]

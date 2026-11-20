@@ -114,6 +114,11 @@ impl Engine {
         self.vpn_was_up = vpn_up;
         if missing && !can_route {
             self.had_missing = true;
+        } else if vpn_up && !waiting && r.missing.is_empty() {
+            // Settled without the reconnect we asked for (the address came
+            // back on its own): a later reconnect is no reason to restart
+            // every browser's network service.
+            self.had_missing = false;
         }
 
         if self.fix_at.is_some_and(|t| now >= t) {
@@ -320,6 +325,28 @@ mod tests {
             e.on_report(&ok(), false, false, 60.0).is_empty(),
             "only once"
         );
+    }
+
+    #[test]
+    fn a_missing_route_that_heals_by_itself_promises_no_reconnect_fix() {
+        let mut e = Engine::default();
+        assert_eq!(e.on_report(&missing(), false, false, 0.0).len(), 1);
+        assert!(e.on_report(&ok(), false, false, 15.0).is_empty(), "healed");
+        // Hours later the VPN drops (a lock, say) and comes back.
+        assert!(e.on_report(&down(), false, false, 9000.0).is_empty());
+        assert!(e.on_report(&ok(), false, false, 9010.0).is_empty());
+        assert_eq!(e.next_deadline(), None, "no fix was promised");
+    }
+
+    #[test]
+    fn a_missing_route_still_counts_while_the_vpn_disconnects() {
+        let mut e = Engine::default();
+        e.on_report(&missing(), false, false, 0.0);
+        let mut settling = ok();
+        settling.settling = true;
+        assert!(e.on_report(&down(), false, false, 10.0).is_empty());
+        assert!(e.on_report(&settling, false, false, 20.0).is_empty());
+        assert_eq!(e.next_deadline(), Some(25.0), "the reconnect fix is due");
     }
 
     #[test]

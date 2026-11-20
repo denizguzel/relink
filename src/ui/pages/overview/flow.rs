@@ -28,6 +28,7 @@ fn tones(status: Option<Status>) -> [Tone; 3] {
         Some(Status::Ok) => [Good, Good, Good],
         Some(Status::Stuck) => [Good, Bad, Good],
         Some(Status::MissingRoute) => [Good, Good, Bad],
+        Some(Status::TunnelDead) => [Bad, Good, Bad],
         Some(Status::Settling) => [Good, Good, Off],
         Some(Status::VpnDown) | None => [Off, Off, Off],
     }

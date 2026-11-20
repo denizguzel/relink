@@ -6,7 +6,7 @@
 #[cfg(windows)]
 pub fn window_geometry() -> Option<crate::config::WindowGeom> {
     use windows_sys::Win32::Foundation::RECT;
-    use windows_sys::Win32::UI::HiDpi::GetDpiForSystem;
+    use windows_sys::Win32::UI::HiDpi::GetDpiForWindow;
     use windows_sys::Win32::UI::WindowsAndMessaging::{GetClientRect, GetWindowRect, IsIconic};
 
     let hwnd = super::own_window::own_window()?;
@@ -24,7 +24,8 @@ pub fn window_geometry() -> Option<crate::config::WindowGeom> {
         if GetClientRect(hwnd, &mut client) == 0 {
             return None;
         }
-        let scale = (GetDpiForSystem().max(96)) as f32 / 96.0;
+        // The window's own monitor scale, as Rune's logical sizes use.
+        let scale = (GetDpiForWindow(hwnd).max(96)) as f32 / 96.0;
         Some(crate::config::WindowGeom {
             x: r.left,
             y: r.top,
@@ -37,4 +38,16 @@ pub fn window_geometry() -> Option<crate::config::WindowGeom> {
 #[cfg(not(windows))]
 pub fn window_geometry() -> Option<crate::config::WindowGeom> {
     None
+}
+
+/// Whether the window exists (shown or minimized), as opposed to closed to the
+/// tray, where Rune destroys it and rebuilds it on the next open.
+#[cfg(windows)]
+pub fn window_exists() -> bool {
+    super::own_window::own_window().is_some()
+}
+
+#[cfg(not(windows))]
+pub fn window_exists() -> bool {
+    true
 }

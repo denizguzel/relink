@@ -116,13 +116,31 @@ fn vpn_interface() -> Result<String, String> {
         .ok_or("no VPN interface is up".into())
 }
 
+/// Routes `ip` through the tunnel. Only a route this helper added earlier is
+/// replaced; any other route to the same /32 (FortiClient's own, say the one to
+/// the VPN gateway) is left alone, since redirecting it could break the tunnel.
 fn route_add(ip: Ipv4Addr) -> Result<String, String> {
     let dev = vpn_interface()?;
+    let ip_cmd = ip_cmd()?;
     let dst = format!("{ip}/32");
+    let ours = !run(
+        ip_cmd,
+        &["-4", "route", "show", "exact", &dst, "proto", PROTO],
+    )?
+    .trim()
+    .is_empty();
+    let verb = if ours { "replace" } else { "add" };
     run(
-        ip_cmd()?,
-        &["-4", "route", "replace", &dst, "dev", &dev, "proto", PROTO],
-    )?;
+        ip_cmd,
+        &["-4", "route", verb, &dst, "dev", &dev, "proto", PROTO],
+    )
+    .map_err(|e| {
+        if !ours && e.contains("File exists") {
+            format!("a route to {dst} that Re-Link did not add exists; it is left alone")
+        } else {
+            e
+        }
+    })?;
     Ok(format!("route {dst} dev {dev}"))
 }
 

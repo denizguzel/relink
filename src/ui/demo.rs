@@ -130,12 +130,16 @@ fn publish(ui: &mut Ui, stuck: bool, missing: bool, vpn_up: bool) {
             ..Default::default()
         },
     });
+    // Connected for 2 h 10 min; sessions have been ending after 8 hours.
+    let up = report.vpn.is_some();
     ui.published = Some(Published {
         report,
         hosts: rows,
         learned: 44,
         checked_at: now - 12,
         helper: cfg!(target_os = "linux"),
+        vpn_since: up.then_some(now - (2 * 3600 + 10 * 60)),
+        session_limit: up.then_some(8 * 3600),
     });
     ui.now = now;
     ui.last_fix = Some(now - 600);
@@ -218,6 +222,7 @@ pub const SCENES: &[Scene] = &[
         tr();
         publish(u, false, false, true);
         u.cfg.welcomed = false;
+        u.vpn_client = true;
     }),
     ("paused", |u| {
         tr();
@@ -230,6 +235,14 @@ pub const SCENES: &[Scene] = &[
         publish(u, false, true, true);
         u.page = Page::Hosts;
         u.expanded_host = Some("dev.etycloudbss.com".into());
+    }),
+    ("tunnel-dead", |u| {
+        tr();
+        publish(u, false, false, true);
+        u.vpn_client = true;
+        if let Some(p) = u.published.as_mut() {
+            p.report.tunnel_dead = true;
+        }
     }),
     ("vpn-down", |u| {
         tr();
@@ -249,7 +262,8 @@ pub const SCENES: &[Scene] = &[
     ("settings", |u| {
         tr();
         publish(u, false, false, true);
-        u.page = Page::Settings
+        u.page = Page::Settings;
+        u.vpn_client = true;
     }),
     ("activity", |u| {
         tr();
@@ -302,7 +316,8 @@ pub const SCENES: &[Scene] = &[
     ("settings-en", |u| {
         crate::i18n::apply("en");
         publish(u, false, false, true);
-        u.page = Page::Settings
+        u.page = Page::Settings;
+        u.vpn_client = true;
     }),
     ("connections-en", |u| {
         crate::i18n::apply("en");

@@ -18,10 +18,17 @@ pub fn default_window_size(work: Option<(f32, f32)>) -> (f32, f32) {
     )
 }
 
-/// The size to open with: the saved one (kept inside the screen and above the
-/// minimum), else the default for the screen.
+/// Whether a saved size can be the app window's: it never gets smaller than the
+/// minimum (a little slack for DPI rounding), so anything below came from
+/// another window and is ignored.
+pub fn plausible_size(width: f32, height: f32) -> bool {
+    width >= MIN_SIZE.0 * 0.9 && height >= MIN_SIZE.1 * 0.9
+}
+
+/// The size to open with: the saved one (kept inside the screen), else the
+/// default for the screen.
 pub fn pick_size(saved: Option<WindowGeom>, work: Option<(f32, f32)>) -> (f32, f32) {
-    match saved {
+    match saved.filter(|g| plausible_size(g.width, g.height)) {
         Some(g) => (
             g.width
                 .clamp(MIN_SIZE.0, work.map_or(f32::MAX, |w| w.0).max(MIN_SIZE.0)),
@@ -112,8 +119,11 @@ mod tests {
             pick_size(saved(1100.0, 700.0), Some((1920.0, 1040.0))),
             (1100.0, 700.0)
         );
-        // Smaller than the layout allows.
-        assert_eq!(pick_size(saved(100.0, 100.0), None), MIN_SIZE);
+        // Smaller than the window can be: not the window's, so the default.
+        assert_eq!(pick_size(saved(100.0, 100.0), None), (1000.0, 680.0));
+        assert_eq!(pick_size(saved(0.0, 0.0), None), (1000.0, 680.0));
+        // A hair under the minimum (DPI rounding) still counts.
+        assert_eq!(pick_size(saved(759.2, 519.5), None), MIN_SIZE);
         // Larger than the screen (a monitor was swapped for a smaller one).
         assert_eq!(
             pick_size(saved(3000.0, 2000.0), Some((1366.0, 728.0))),

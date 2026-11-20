@@ -20,7 +20,7 @@ pub fn spec() -> rune::AppSpec<Ui> {
         families: rune_theme_opencode::FAMILIES,
         poll: Some(ui::poll),
         on_key: Some(ui::on_key),
-        min_size: Some((760.0, 520.0)),
+        min_size: Some(platform::MIN_SIZE),
         ..rune::AppSpec::new(
             "Re-Link",
             *WINDOW_SIZE.get().unwrap_or(&(1000.0, 680.0)),
@@ -138,11 +138,14 @@ pub fn run(paths: Paths, cfg: Config, cfg_err: Option<String>, hidden: bool, upd
     };
 
     let (click_handle, click_cmd) = (handle.clone(), cmd_tx.clone());
-    platform::on_notification_click(move |action| {
-        if action == "fix" {
+    platform::on_notification_click(move |action| match action {
+        // FortiClient is what the user wants then, not Re-Link's window.
+        "connect-vpn" if platform::open_vpn_client() => {}
+        "fix" => {
             let _ = click_cmd.send(Cmd::FixNow);
+            ui::bring_forward(&click_handle);
         }
-        click_handle.open();
+        _ => ui::bring_forward(&click_handle),
     });
 
     let monitor = Monitor::new(handle, shared, paths, tray.clone(), log);

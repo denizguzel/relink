@@ -10,10 +10,21 @@ pub fn status_text(status: Option<Status>, report: Option<&Report>) -> String {
         (Some(Status::Ok), _) => t!("status_ok"),
         (Some(Status::VpnDown), _) => t!("status_vpn_down"),
         (Some(Status::Settling), _) => t!("status_settling"),
+        (Some(Status::TunnelDead), _) => t!("status_tunnel_dead"),
         (Some(Status::Stuck), Some(r)) => t!("status_stuck", count = r.stuck.len()),
         (Some(Status::MissingRoute), Some(r)) => {
             t!("status_missing_short", count = r.missing_hosts().len())
         }
+    }
+}
+
+/// "2 h 10 min", or "25 min" under an hour.
+pub fn duration_text(secs: u64) -> String {
+    let (h, m) = (secs / 3600, secs % 3600 / 60);
+    if h == 0 {
+        t!("duration_m", m = m)
+    } else {
+        t!("duration_hm", h = h, m = m)
     }
 }
 

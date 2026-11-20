@@ -1,12 +1,14 @@
 //! Controls used on more than one page: the interface language, the
 //! notification level and the start-with-the-session switch (Settings and the
-//! welcome card).
+//! welcome card), and the Settings' small segmented choices.
 
 use rune::{El, Tx, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, SegmentedControl, Switch};
 
 use crate::t;
 use crate::ui::Ui;
+use crate::ui::icons;
+use crate::ui::parts::setting_row;
 use crate::ui::theme::{THEMES, theme_index};
 use crate::ui::zoom;
 
@@ -61,6 +63,81 @@ pub fn notifications(s: &Ui, k: &Kit) -> El {
     .fit()
     .on_pick(|s: &mut Ui, i: usize, _: &mut Tx| s.change(|c| c.notifications = LEVELS[i].into()))
     .build(k)
+}
+
+/// What happens when the user is back and the VPN is gone, in the order of the
+/// segmented control. Without FortiClient there is nothing to open.
+pub fn unlock_modes(client: bool) -> &'static [&'static str] {
+    if client {
+        &["notify", "open", "off"]
+    } else {
+        &["notify", "off"]
+    }
+}
+
+/// The segment of an unlock setting; an unknown value (or "open" with nothing
+/// to open, which then notifies) counts as "notify".
+pub fn unlock_index(mode: &str, client: bool) -> usize {
+    unlock_modes(client)
+        .iter()
+        .position(|&m| m == mode)
+        .unwrap_or(0)
+}
+
+fn vpn_after_unlock(s: &Ui, k: &Kit) -> El {
+    let labels = if s.vpn_client {
+        vec![t!("unlock_notify"), t!("unlock_open"), t!("unlock_off")]
+    } else {
+        vec![t!("unlock_notify"), t!("unlock_off")]
+    };
+    SegmentedControl::new(
+        &labels,
+        Some(unlock_index(&s.cfg.vpn_after_unlock, s.vpn_client)),
+    )
+    .label(t!("vpn_after_unlock"))
+    .fit()
+    .on_pick(|s: &mut Ui, i: usize, _: &mut Tx| {
+        let mode = unlock_modes(s.vpn_client)[i];
+        s.change(|c| c.vpn_after_unlock = mode.into())
+    })
+    .build(k)
+}
+
+/// The "after lock or sleep" row (Settings and the welcome card): where
+/// Re-Link sees the lock (Windows with FortiClient, Linux).
+pub fn unlock_row(key: &str, s: &Ui, k: &Kit) -> Option<El> {
+    if !s.vpn_client && !cfg!(target_os = "linux") {
+        return None;
+    }
+    Some(setting_row(
+        key,
+        k,
+        &icons::LOCK_OPEN,
+        t!("vpn_after_unlock"),
+        Some(if s.vpn_client {
+            t!("vpn_after_unlock_desc")
+        } else {
+            t!("vpn_after_unlock_desc_no_client")
+        }),
+        vpn_after_unlock(s, k),
+    ))
+}
+
+/// The "warn before the session ends" row (Settings and the welcome card).
+pub fn session_row(key: &str, s: &Ui, k: &Kit) -> El {
+    let switch = Switch::new(s.cfg.session_warning)
+        .label(t!("session_warning"))
+        .hide_label()
+        .on_toggle(|s: &mut Ui| s.change(|c| c.session_warning = !c.session_warning))
+        .build(k);
+    setting_row(
+        key,
+        k,
+        &icons::CLOCK,
+        t!("session_warning"),
+        Some(t!("session_warning_desc")),
+        switch,
+    )
 }
 
 pub fn startup(s: &Ui, k: &Kit) -> El {
@@ -130,5 +207,15 @@ mod tests {
         assert_eq!(language_index("tr"), 1);
         assert_eq!(language_index("en"), 2);
         assert_eq!(language_index("de"), 0, "unknown follows the system");
+    }
+
+    #[test]
+    fn unlock_modes_map_to_segments() {
+        assert_eq!(unlock_index("notify", true), 0);
+        assert_eq!(unlock_index("open", true), 1);
+        assert_eq!(unlock_index("off", true), 2);
+        assert_eq!(unlock_index("", true), 0, "unknown notifies, the default");
+        assert_eq!(unlock_index("off", false), 1);
+        assert_eq!(unlock_index("open", false), 0, "nothing to open: notifies");
     }
 }

@@ -18,6 +18,7 @@ fn detail(status: Option<Status>) -> String {
         Some(Status::Settling) => t!("detail_settling"),
         Some(Status::Stuck) => t!("detail_stuck"),
         Some(Status::MissingRoute) => t!("detail_missing"),
+        Some(Status::TunnelDead) => t!("detail_tunnel_dead"),
     }
 }
 
@@ -28,6 +29,7 @@ fn status_icon(status: Option<Status>) -> &'static rune::Icon {
         Some(Status::Stuck) => &icons::TRIANGLE_ALERT,
         Some(Status::MissingRoute) => &icons::LINK_2_OFF,
         Some(Status::VpnDown) => &icons::UNPLUG,
+        Some(Status::TunnelDead) => &icons::ZAP_OFF,
         Some(Status::Settling) | None => &icons::LOADER_CIRCLE,
     }
 }
@@ -110,6 +112,15 @@ fn actions(cx: &Ctx) -> Option<El> {
     if cx.status == Some(Status::VpnDown) {
         return connect_vpn(cx);
     }
+    // Connected but dead: reconnecting is the fix, checking again shows when
+    // it works again.
+    if cx.status == Some(Status::TunnelDead) {
+        let mut r = row().key("actions").gap(8.0).pt(4.0);
+        if cx.s.vpn_client {
+            r = r.child(connect_vpn_button(cx));
+        }
+        return Some(r.child(check_button(cx)));
+    }
     let mut r = row().key("actions").gap(8.0).pt(4.0);
     if needs_fix(cx.status) && !cx.unfixable() {
         r = r.child(fix_button(cx));
@@ -126,7 +137,18 @@ fn connect_vpn(cx: &Ctx) -> Option<El> {
     if !cx.s.vpn_client {
         return None;
     }
-    let button = Button::new(t!("connect_vpn"))
+    Some(
+        row()
+            .key("actions")
+            .gap(8.0)
+            .pt(4.0)
+            .child(connect_vpn_button(cx)),
+    )
+}
+
+/// Opens FortiClient on its connection page.
+fn connect_vpn_button(cx: &Ctx) -> El {
+    Button::new(t!("connect_vpn"))
         .icon(&icons::PLUG)
         .variant(ButtonVariant::Contrast)
         .on_press(|s: &mut Ui| {
@@ -135,18 +157,17 @@ fn connect_vpn(cx: &Ctx) -> Option<El> {
             }
         })
         .build(cx.k)
-        .key("connect-vpn");
-    Some(row().key("actions").gap(8.0).pt(4.0).child(button))
+        .key("connect-vpn")
 }
 
-/// Whether Re-Link is looking every second (no VPN, or its routes are still
-/// arriving): then "when was the last check" means nothing.
+/// Whether Re-Link is looking every second or few (no VPN, or its routes are
+/// still arriving): then "when was the last check" means nothing.
 fn live(status: Option<Status>) -> bool {
     matches!(status, Some(Status::VpnDown | Status::Settling))
 }
 
 /// A quiet line under the status: "Watching live" with a dot while checking
-/// every second, otherwise "Last check: just now" (changes once a minute).
+/// that often, otherwise "Last check: just now" (changes once a minute).
 fn meta(cx: &Ctx) -> Option<El> {
     let (k, c) = (cx.k, &cx.k.c);
     let at = cx.s.published.as_ref()?.checked_at;
@@ -285,6 +306,7 @@ mod tests {
             Status::Settling,
             Status::Stuck,
             Status::MissingRoute,
+            Status::TunnelDead,
         ] {
             assert!(!detail(Some(st)).is_empty(), "{st:?}");
         }
@@ -299,6 +321,7 @@ mod tests {
             name(Some(Status::MissingRoute)),
             name(Some(Status::VpnDown)),
             name(Some(Status::Settling)),
+            name(Some(Status::TunnelDead)),
         ];
         let unique: std::collections::HashSet<_> = all.iter().collect();
         assert_eq!(unique.len(), all.len(), "{all:?}");

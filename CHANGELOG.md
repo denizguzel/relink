@@ -4,6 +4,23 @@ What changed in each Re-Link release, newest first. Each section is also that
 release's notes on GitHub: the release workflow publishes it, and
 `scripts/release.sh` refuses to tag a version that has none.
 
+## 0.6.1 — 2026-11-20
+
+### Fixes
+
+- Connecting the VPN no longer raises a false "company addresses outside the
+  VPN" alarm. FortiClient adds its last routes 30–45 seconds after connecting
+  (often for addresses that changed when DNS switched to the company's
+  servers); Re-Link now waits for them while hosts are still missing, and goes
+  green as soon as everything is in place.
+- The progress bar while the VPN connects no longer jumps backwards (38/39,
+  then 6/39): it counts the ready addresses afresh at every check, and names
+  are looked up again every few seconds while the routes arrive.
+- Routes that arrive after a warning turn the status green at once, instead of
+  another 20 seconds of "preparing".
+- The same missing addresses are announced once, even when their names resolve
+  to other addresses of the same service.
+
 ## 0.6.0 — 2026-11-20
 
 ### New

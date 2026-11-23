@@ -114,9 +114,9 @@
   "status_settling": "VPN bağlandı, bağlantılar hazırlanıyor…",
   "detail_settling": "FortiClient bağlantıları yeni kuruyor. Birkaç saniye içinde Re-Link yeniden kontrol eder; bir şey yapmanıza gerek yok.",
   "ev_no_network_process": "{{process}} bağlantıyı kendi ana sürecinde tutuyor; Re-Link bunu yönetici yetkisi olmadan kapatamaz. Takılan sayfa için tarayıcıyı yeniden başlatın",
-  "notify_stuck_firefox_body": "{{processes}}, VPN kapalıyken açtığı bir bağlantıyı kullanıyor. Birkaç dakikada kendiliğinden düzelir; beklemek istemezseniz Firefox'u yeniden başlatın.",
+  "notify_stuck_firefox_body": "{{processes}}, VPN kapalıyken açtığı bir bağlantıyı kullanıyor. Re-Link'i açıp \"Firefox'u yeniden başlat\"a basın (önce işinizi kaydedin) ya da birkaç dakika bekleyin: kendiliğinden düzelebilir.",
   "stuck_note_fixable": "Şimdi düzelt bağlantıları yeniler; sekmeleriniz açık kalır.",
-  "stuck_note_firefox": "Firefox bu bağlantıyı kendi ana sürecinde tutuyor; Re-Link kapatamaz. Birkaç dakika boşta kalınca kendiliğinden kapanır, beklemek istemezseniz Firefox'u yeniden başlatın.",
+  "stuck_note_firefox": "Bu bağlantıyı yalnızca Firefox'u yeniden başlatmak kapatır. Yukarıdaki uyarıya bakın.",
   "settle_progress": "Bağlantılar: {{done}}/{{total}} adres hazır",
   "settle_waiting": "Bekleyen: {{names}}",
   "settle_waiting_more": "Bekleyen: {{names}} ve {{count}} adres daha",
@@ -226,5 +226,15 @@
   "check_result": "{{conns}} tarayıcı bağlantısı ve {{hosts}} şirket adresi kontrol edildi.",
   "check_result_ok": "{{conns}} tarayıcı bağlantısı ve {{hosts}} şirket adresi kontrol edildi: hepsi doğru yoldan gidiyor.",
   "check_result_stuck": "{{conns}} tarayıcı bağlantısı ve {{hosts}} şirket adresi kontrol edildi: {{count}} bağlantı VPN dışında takılı.",
-  "check_result_missing": "{{conns}} tarayıcı bağlantısı ve {{hosts}} şirket adresi kontrol edildi: {{count}} adres VPN dışında."
+  "check_result_missing": "{{conns}} tarayıcı bağlantısı ve {{hosts}} şirket adresi kontrol edildi: {{count}} adres VPN dışında.",
+  "firefox_card_title": "Firefox'un yeniden başlatılması gerekiyor",
+  "firefox_card_body": "Firefox, VPN kapalıyken bir bağlantı açtı ve bunu ana sürecinde tutuyor; Re-Link kapatamaz. Firefox yeniden başlatılana kadar şirket sitelerinin sayfaları 403 vermeye devam edebilir.",
+  "firefox_card_step_save": "Önce Firefox'ta yazdığınız ya da yüklediğiniz bir şey varsa bitirin.",
+  "firefox_card_step_restart": "Düğmeye basın: Firefox kapanıp kendiliğinden yeniden açılır, sekmeleriniz geri gelir.",
+  "firefox_card_step_missing": "Sekmeler geri gelmezse Firefox'ta Geçmiş → Önceki oturumu geri yükle'yi kullanın.",
+  "firefox_restart": "Firefox'u yeniden başlat",
+  "ev_firefox_restarted": "Firefox yeniden başlatıldı",
+  "ev_firefox_restart_failed": "Firefox yeniden başlatılamadı: {{error}}",
+  "notify_firefox_restarted_title": "Firefox yeniden başlatıldı",
+  "notify_firefox_restarted_body": "Sekmeleriniz geri gelmiş olmalı. Gelmediyse Geçmiş → Önceki oturumu geri yükle'yi kullanın."
 }

@@ -5,8 +5,8 @@
 A tray app for Windows and Linux that keeps browsers working while a FortiClient
 VPN split tunnel is on.
 
-Internal pages in Chrome, Edge and Firefox sometimes return **403/400** while the
-VPN is connected. Reconnecting doesn't help; only restarting the browser does.
+Internal pages in Chrome, Edge, Brave, Comet, Opera, Vivaldi, Yandex Browser and
+Firefox sometimes return **403/400** while the VPN is connected. Reconnecting doesn't help; only restarting the browser does.
 Re-Link finds those stuck connections quietly in the tray and clears them without
 closing the browser.
 
@@ -46,8 +46,11 @@ the stale connections and the DNS cache are dropped. No host list is needed.
 - Closing the window leaves Re-Link in the tray.
 
 The manual equivalent is **Shift+Esc** → *Network Service* → *End process*.
-Firefox on Windows keeps its sockets in the main process: Re-Link reports the
-problem, and you restart the browser (on Linux the helper closes the sockets itself).
+Firefox on Windows keeps its sockets in the main process, so there is no service to
+restart: Re-Link shows a warning with a **Restart Firefox** button instead. Pressing it
+ends Firefox and starts it again with the same profile; Firefox restores its tabs (if not,
+*History → Restore Previous Session*). Finish anything you are typing or uploading first.
+On Linux the helper closes the sockets itself, so Firefox needs no restart.
 
 While the Network Service restarts, downloads and WebSocket connections drop, and
 some sites may ask you to sign in again.

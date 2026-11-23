@@ -214,6 +214,19 @@ pub const SCENES: &[Scene] = &[
         tr();
         publish(u, true, false, true)
     }),
+    ("stuck-firefox", |u| {
+        tr();
+        publish(u, true, false, true);
+        if let Some(p) = u.published.as_mut() {
+            p.helper = false;
+            for (c, _, _) in p.report.conns.iter_mut() {
+                c.process = "firefox.exe".into();
+            }
+            for st in p.report.stuck.iter_mut() {
+                st.conn.process = "firefox.exe".into();
+            }
+        }
+    }),
     ("missing", |u| {
         tr();
         publish(u, false, true, true)

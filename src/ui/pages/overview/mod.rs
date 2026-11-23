@@ -3,6 +3,7 @@
 
 mod check;
 mod details;
+mod firefox;
 mod flow;
 mod hero;
 mod paused;
@@ -53,6 +54,19 @@ impl<'a> Ctx<'a> {
             })
     }
 
+    /// A Firefox connection is stuck and nothing but a restart clears it (the
+    /// root helper can close single sockets, so it needs no restart).
+    fn firefox_stuck(&self) -> bool {
+        !self.helper
+            && !self.waiting()
+            && self.status == Some(Status::Stuck)
+            && self.report.is_some_and(|r| {
+                r.stuck_processes()
+                    .iter()
+                    .any(|n| crate::diagnose::is_firefox(n))
+            })
+    }
+
     /// The VPN's routes are still arriving, so problems are not news yet.
     fn waiting(&self) -> bool {
         self.report.is_some_and(Report::waiting_for_routes)
@@ -66,6 +80,7 @@ pub fn overview(s: &Ui, k: &Kit) -> El {
     // Two columns when the window is wide enough, stacked when it is not.
     let mut main = col().key("main").grow(3.0).min_w(320.0).gap(18.0);
     main = main
+        .children(firefox::card(&cx))
         .children(problems::problems(&cx))
         .children(session::card(&cx))
         .child(stats::stats(&cx))
@@ -126,6 +141,21 @@ mod tests {
             !Ctx::new(&ui, kit).unfixable(),
             "the root helper can close its sockets"
         );
+    }
+
+    #[test]
+    fn a_stuck_firefox_gets_the_restart_card_unless_the_helper_is_there() {
+        let (mut ui, kit) = (scene("stuck"), rune_theme_opencode::kit(true));
+        assert!(!Ctx::new(&ui, kit).firefox_stuck(), "Chrome only: no card");
+        for st in ui.published.as_mut().unwrap().report.stuck.iter_mut() {
+            st.conn.process = "firefox.exe".into();
+        }
+        ui.published.as_mut().unwrap().helper = false;
+        let cx = Ctx::new(&ui, kit);
+        assert!(cx.firefox_stuck() && firefox::card(&cx).is_some());
+        ui.published.as_mut().unwrap().helper = true;
+        let cx = Ctx::new(&ui, kit);
+        assert!(!cx.firefox_stuck() && firefox::card(&cx).is_none());
     }
 
     #[test]

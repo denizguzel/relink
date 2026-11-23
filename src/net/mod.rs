@@ -10,6 +10,9 @@ use std::time::{Duration, Instant};
 
 use crate::diagnose::{Conn, Snapshot};
 
+mod relaunch;
+pub use relaunch::restart_browser;
+
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]

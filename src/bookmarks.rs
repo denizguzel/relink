@@ -72,10 +72,15 @@ fn match_host(url: &str, domains: &[String]) -> Option<String> {
 }
 
 /// Every profile's Bookmarks file under the given Chromium "User Data"
-/// directories.
+/// directories (and in the directories themselves, as Opera has it).
 pub fn files(user_data_dirs: &[PathBuf]) -> Vec<PathBuf> {
     let mut out = Vec::new();
     for dir in user_data_dirs {
+        // Opera keeps `Bookmarks` in the profile folder itself.
+        let own = dir.join("Bookmarks");
+        if own.is_file() {
+            out.push(own);
+        }
         let Ok(entries) = fs::read_dir(dir) else {
             continue;
         };
@@ -211,17 +216,32 @@ pub fn all_files() -> Vec<PathBuf> {
 
 /// Every Chromium browser's profile root (the folder holding `Default`,
 /// `Profile 1`, …): Chrome stable/Beta/Dev/Canary, Edge channels, Brave,
-/// Chromium, including Ubuntu's snap Chromium.
+/// Chromium (including Ubuntu's snap Chromium), Comet, Vivaldi, Yandex, Opera.
 pub fn browser_dirs() -> Vec<PathBuf> {
-    browser_dirs_in(
-        &std::env::var_os(if cfg!(windows) {
-            "LOCALAPPDATA"
-        } else {
-            "HOME"
-        })
-        .map(PathBuf::from)
-        .unwrap_or_default(),
-    )
+    let env = |k| std::env::var_os(k).map(PathBuf::from).unwrap_or_default();
+    let mut dirs = browser_dirs_in(&env(if cfg!(windows) {
+        "LOCALAPPDATA"
+    } else {
+        "HOME"
+    }));
+    if cfg!(windows) {
+        dirs.extend(roaming_dirs_in(&env("APPDATA")));
+    }
+    dirs
+}
+
+/// Opera keeps its profile under `%APPDATA%` (roaming), not `%LOCALAPPDATA%`.
+pub fn roaming_dirs_in(base: &Path) -> Vec<PathBuf> {
+    [
+        "Opera Stable",
+        "Opera GX Stable",
+        "Opera Next",
+        "Opera Developer",
+    ]
+    .iter()
+    .map(|n| base.join("Opera Software").join(n))
+    .filter(|p| p.is_dir())
+    .collect()
 }
 
 /// [`browser_dirs`] under `base`: `%LOCALAPPDATA%` on Windows, `$HOME` elsewhere.
@@ -238,6 +258,9 @@ pub fn browser_dirs_in(base: &Path) -> Vec<PathBuf> {
             "Microsoft/Edge SxS/User Data",
             "BraveSoftware/Brave-Browser/User Data",
             "Chromium/User Data",
+            "Perplexity/Comet/User Data",
+            "Vivaldi/User Data",
+            "Yandex/YandexBrowser/User Data",
         ]
     } else {
         &[
@@ -251,6 +274,10 @@ pub fn browser_dirs_in(base: &Path) -> Vec<PathBuf> {
             ".config/BraveSoftware/Brave-Browser",
             ".config/chromium",
             "snap/chromium/common/chromium",
+            ".config/vivaldi",
+            ".config/vivaldi-snapshot",
+            ".config/yandex-browser",
+            ".config/opera",
         ]
     };
     rel.iter()
@@ -316,6 +343,24 @@ mod tests {
         let dir = canary.split('/').fold(base.clone(), |p, part| p.join(part));
         fs::create_dir_all(&dir).unwrap();
         assert_eq!(browser_dirs_in(&base), vec![dir]);
+    }
+
+    #[test]
+    fn finds_bookmarks_in_a_profile_folder_itself_and_roaming_opera() {
+        let base = std::env::temp_dir().join(format!("relink-opera-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&base);
+        let opera = base.join("Opera Software").join("Opera Stable");
+        fs::create_dir_all(&opera).unwrap();
+        fs::write(opera.join("Bookmarks"), "{}").unwrap();
+        assert_eq!(roaming_dirs_in(&base), vec![opera.clone()]);
+        assert_eq!(
+            files(std::slice::from_ref(&opera)),
+            vec![opera.join("Bookmarks")]
+        );
+        // The newer layout: a `Default` profile inside.
+        fs::create_dir_all(opera.join("Default")).unwrap();
+        fs::write(opera.join("Default").join("Bookmarks"), "{}").unwrap();
+        assert_eq!(files(&[opera]).len(), 2);
     }
 
     #[test]

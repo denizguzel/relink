@@ -114,9 +114,9 @@
   "status_settling": "VPN connected, connections getting ready…",
   "detail_settling": "FortiClient is still setting up its connections. Re-Link checks again in a few seconds; nothing to do.",
   "ev_no_network_process": "{{process}} keeps the connection in its main process; Re-Link cannot close it without administrator rights. Restart the browser to clear the stuck page",
-  "notify_stuck_firefox_body": "{{processes}} is using a connection it opened while the VPN was off. It usually clears by itself within minutes; restart Firefox if you don't want to wait.",
+  "notify_stuck_firefox_body": "{{processes}} is using a connection it opened while the VPN was off. Open Re-Link and press \"Restart Firefox\" (save your work first), or wait a few minutes: it may clear by itself.",
   "stuck_note_fixable": "Fix now refreshes the connections; your tabs stay open.",
-  "stuck_note_firefox": "Firefox keeps this connection in its main process; Re-Link cannot close it. It closes by itself after a few idle minutes; restart Firefox if you don't want to wait.",
+  "stuck_note_firefox": "Only restarting Firefox clears this connection. See the warning above.",
   "settle_progress": "Connections: {{done}}/{{total}} addresses ready",
   "settle_waiting": "Waiting for: {{names}}",
   "settle_waiting_more": "Waiting for: {{names}} and {{count}} more",
@@ -226,5 +226,15 @@
   "check_result": "Checked {{conns}} browser connections and {{hosts}} company addresses.",
   "check_result_ok": "Checked {{conns}} browser connections and {{hosts}} company addresses: everything goes the right way.",
   "check_result_stuck": "Checked {{conns}} browser connections and {{hosts}} company addresses: {{count}} connection(s) stuck outside the VPN.",
-  "check_result_missing": "Checked {{conns}} browser connections and {{hosts}} company addresses: {{count}} address(es) outside the VPN."
+  "check_result_missing": "Checked {{conns}} browser connections and {{hosts}} company addresses: {{count}} address(es) outside the VPN.",
+  "firefox_card_title": "Firefox needs a restart",
+  "firefox_card_body": "Firefox opened a connection while the VPN was off and keeps it in its main process, so Re-Link cannot close it. Pages of company sites may keep returning 403 until Firefox is restarted.",
+  "firefox_card_step_save": "Finish what you are typing or uploading in Firefox first.",
+  "firefox_card_step_restart": "Press the button: Firefox closes and opens again by itself, and your tabs come back.",
+  "firefox_card_step_missing": "If the tabs do not come back, use History → Restore Previous Session in Firefox.",
+  "firefox_restart": "Restart Firefox",
+  "ev_firefox_restarted": "Firefox was restarted",
+  "ev_firefox_restart_failed": "Could not restart Firefox: {{error}}",
+  "notify_firefox_restarted_title": "Firefox restarted",
+  "notify_firefox_restarted_body": "Your tabs should be back. If not, use History → Restore Previous Session."
 }

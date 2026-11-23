@@ -16,6 +16,8 @@ use crate::t;
 pub enum Cmd {
     CheckNow,
     FixNow,
+    /// End Firefox and start it again (its sockets live in its main process).
+    RestartFirefox,
     /// Settings changed: reread the shared config.
     Reload,
     /// Mute notifications and automatic fixes for this many seconds.

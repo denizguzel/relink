@@ -7,6 +7,28 @@ use crate::ui::Level;
 use crate::{config, net, t};
 
 impl Monitor {
+    /// The user asked to restart Firefox: its stuck sockets live in the main
+    /// process, so the browser is ended and started again (it restores its
+    /// tabs from its own session backup).
+    pub(super) fn restart_firefox(&mut self) {
+        let names: Vec<String> = net::watched(&self.cfg.lock().unwrap().browsers)
+            .into_iter()
+            .filter(|b| crate::diagnose::is_firefox(b))
+            .collect();
+        match net::restart_browser(&names) {
+            Ok(_) => {
+                self.event(t!("ev_firefox_restarted"), Level::Good);
+                notify(
+                    "fixed",
+                    &t!("notify_firefox_restarted_title"),
+                    &t!("notify_firefox_restarted_body"),
+                    None,
+                );
+            }
+            Err(e) => self.event(t!("ev_firefox_restart_failed", error = e), Level::Warn),
+        }
+    }
+
     pub(super) fn act(&mut self, action: Action) {
         match action {
             Action::Fix { automatic, reason } => {

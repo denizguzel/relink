@@ -142,6 +142,11 @@ impl Monitor {
                     due = Instant::now() + Duration::from_secs(3); // let Chromium bring the service back
                     continue;
                 }
+                Ok(Cmd::RestartFirefox) => {
+                    self.restart_firefox();
+                    due = Instant::now() + Duration::from_secs(10); // let it reconnect first
+                    continue;
+                }
                 Ok(Cmd::Pause(secs)) => {
                     self.pause.start(secs, Instant::now());
                     self.pause_changed();

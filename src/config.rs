@@ -94,7 +94,8 @@ impl Default for Config {
 }
 
 /// Browsers Re-Link watches. Chromium-based ones (Chrome with all channels
-/// sharing one executable name, Edge, Brave, Chromium) also get their network
+/// sharing one executable name, Edge, Brave, Chromium, Comet, Opera, Vivaldi,
+/// Yandex) also get their network
 /// service restarted. Firefox (all editions) is watched, but has no separate
 /// network process, so on Windows it can only be reported.
 pub fn default_browsers() -> Vec<String> {
@@ -104,6 +105,11 @@ pub fn default_browsers() -> Vec<String> {
             "msedge.exe",
             "brave.exe",
             "chromium.exe",
+            "comet.exe",
+            "opera.exe",
+            "vivaldi.exe",
+            // Yandex Browser's executable has this generic name.
+            "browser.exe",
             "firefox.exe",
         ]
     } else {
@@ -115,6 +121,9 @@ pub fn default_browsers() -> Vec<String> {
             "brave",
             "chromium",
             "chromium-browser",
+            "opera",
+            "vivaldi-bin",
+            "yandex_browser",
             "firefox",
             "firefox-bin",
         ]

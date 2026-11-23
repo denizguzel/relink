@@ -4,6 +4,20 @@ What changed in each Re-Link release, newest first. Each section is also that
 release's notes on GitHub: the release workflow publishes it, and
 `scripts/release.sh` refuses to tag a version that has none.
 
+## 0.8.0 — 2026-11-23
+
+### New
+
+- **More browsers.** Comet, Opera, Vivaldi and Yandex Browser are watched like
+  Chrome and Edge: their network service is restarted when a connection is
+  stuck, and their bookmarks count towards the company addresses.
+- **Restart Firefox from Re-Link.** Firefox keeps its sockets in the main
+  process, so a stuck connection cannot be closed without administrator
+  rights. When only a restart helps, the Overview now shows a warning with the
+  steps and a **Restart Firefox** button: it ends Firefox and starts it again
+  with the same profile, and Firefox restores its tabs. Finish anything you
+  are typing or uploading first. The toast says the same.
+
 ## 0.7.0 — 2026-11-20
 
 ### New

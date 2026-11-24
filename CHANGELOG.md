@@ -4,6 +4,21 @@ What changed in each Re-Link release, newest first. Each section is also that
 release's notes on GitHub: the release workflow publishes it, and
 `scripts/release.sh` refuses to tag a version that has none.
 
+## 0.8.1 — 2026-11-24
+
+### Fixes
+
+- **"VPN connected for" counted the night the computer was off.** After turning
+  the computer off in the evening and on in the morning, Re-Link kept the
+  previous session's start and showed a connection time of 20 hours, though the
+  VPN had just been connected. Re-Link now remembers when it last saw the VPN up
+  and starts the time afresh when it was away for more than a few minutes. The
+  session-limit warning no longer learns from these wrong times either.
+
+### Notes
+
+- The first start after updating shows the time from that moment, once.
+
 ## 0.8.0 — 2026-11-23
 
 ### New

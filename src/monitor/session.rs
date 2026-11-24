@@ -14,9 +14,12 @@ pub const CLUSTER: usize = 3;
 pub const KEEP: usize = 20;
 /// How long before the likely end the warning comes.
 pub const WARN_BEFORE: u64 = 10 * 60;
-/// A start older than this is not trusted after a restart (the VPN has
-/// reconnected meanwhile, unseen).
-pub const STALE_START: u64 = 24 * 3600;
+/// After a restart, a start is trusted only if the VPN was seen up this
+/// recently; a longer gap (computer off, Re-Link closed) means it reconnected
+/// meanwhile, unseen.
+pub const STALE_GAP: u64 = 15 * 60;
+/// How often the "last seen up" time is refreshed on disk.
+pub const SEEN_EVERY: u64 = 5 * 60;
 
 /// The session limit the history suggests: the shortest duration of the
 /// largest group of long sessions that ended within `TOLERANCE` of each other,
@@ -52,19 +55,29 @@ pub struct Seen {
 }
 
 /// Follows the VPN going up and down. Returns whether the record changed.
-pub fn follow(since: &mut Option<u64>, sessions: &mut Vec<u64>, seen: Seen) -> bool {
-    match (*since, seen.vpn_up) {
+pub fn follow(
+    since: &mut Option<u64>,
+    last_up: &mut Option<u64>,
+    sessions: &mut Vec<u64>,
+    seen: Seen,
+) -> bool {
+    let refresh = seen.vpn_up && last_up.is_none_or(|t| seen.now.saturating_sub(t) >= SEEN_EVERY);
+    let changed = match (*since, seen.vpn_up) {
         (None, true) => {
             *since = Some(seen.now);
             true
         }
-        // A start remembered from long ago (Re-Link was off): unknown, restart it.
-        (Some(start), true) if !seen.watched && seen.now.saturating_sub(start) > STALE_START => {
+        // Re-Link was not watching and the VPN was last seen up long ago: it
+        // reconnected unseen, so the remembered start is wrong. Restart it.
+        (Some(_), true)
+            if !seen.watched && last_up.is_none_or(|t| seen.now.saturating_sub(t) > STALE_GAP) =>
+        {
             *since = Some(seen.now);
             true
         }
         (Some(start), false) => {
             *since = None;
+            *last_up = None;
             if seen.watched {
                 sessions.push(seen.now.saturating_sub(start));
                 let extra = sessions.len().saturating_sub(KEEP);
@@ -73,7 +86,11 @@ pub fn follow(since: &mut Option<u64>, sessions: &mut Vec<u64>, seen: Seen) -> b
             true
         }
         _ => false,
+    };
+    if refresh {
+        *last_up = Some(seen.now);
     }
+    changed || refresh
 }
 
 /// Whether to warn now: within `WARN_BEFORE` of the limit, before it.
@@ -118,49 +135,88 @@ mod tests {
         }
     }
 
+    fn unwatched(vpn_up: bool, now: u64) -> Seen {
+        Seen {
+            vpn_up,
+            now,
+            watched: false,
+        }
+    }
+
     #[test]
     fn a_watched_session_is_recorded_when_it_ends() {
-        let (mut since, mut s) = (None, vec![]);
-        assert!(follow(&mut since, &mut s, seen(true, 100)));
-        assert!(!follow(&mut since, &mut s, seen(true, 200)));
-        assert!(follow(&mut since, &mut s, seen(false, 100 + 8 * H)));
-        assert_eq!((since, s), (None, vec![8 * H]));
+        let (mut since, mut last, mut s) = (None, None, vec![]);
+        assert!(follow(&mut since, &mut last, &mut s, seen(true, 100)));
+        assert!(!follow(&mut since, &mut last, &mut s, seen(true, 200)));
+        assert!(follow(
+            &mut since,
+            &mut last,
+            &mut s,
+            seen(false, 100 + 8 * H)
+        ));
+        assert_eq!((since, last, s), (None, None, vec![8 * H]));
     }
 
     #[test]
     fn an_end_nobody_saw_is_not_recorded() {
-        let (mut since, mut s) = (Some(100), vec![]);
-        let away = Seen {
-            vpn_up: false,
-            now: 100 + 9 * H,
-            watched: false,
-        };
-        assert!(follow(&mut since, &mut s, away));
+        let (mut since, mut last, mut s) = (Some(100), Some(100), vec![]);
+        let away = unwatched(false, 100 + 9 * H);
+        assert!(follow(&mut since, &mut last, &mut s, away));
         assert_eq!((since, s.len()), (None, 0));
     }
 
     #[test]
-    fn a_start_from_long_ago_is_not_trusted_after_a_restart() {
-        let (mut since, mut s) = (Some(100), vec![]);
-        let now = 100 + 2 * STALE_START;
-        let first = Seen {
-            vpn_up: true,
-            now,
-            watched: false,
-        };
-        assert!(follow(&mut since, &mut s, first));
-        assert_eq!(since, Some(now));
-        // A recent one is kept (Re-Link was restarted by an update, say).
-        let mut since = Some(now - 600);
-        assert!(!follow(&mut since, &mut s, first));
-        assert_eq!(since, Some(now - 600));
+    fn a_night_with_the_computer_off_restarts_the_start() {
+        // Seen up at 18:00, back 20 hours later: the VPN reconnected unseen.
+        let (mut since, mut last, mut s) = (Some(100), Some(100 + 8 * H), vec![]);
+        let now = 100 + 28 * H;
+        assert!(follow(&mut since, &mut last, &mut s, unwatched(true, now)));
+        assert_eq!((since, last), (Some(now), Some(now)));
+    }
+
+    #[test]
+    fn an_old_state_without_last_seen_is_not_trusted() {
+        let (mut since, mut last, mut s) = (Some(100), None, vec![]);
+        assert!(follow(&mut since, &mut last, &mut s, unwatched(true, 600)));
+        assert_eq!(since, Some(600));
+    }
+
+    #[test]
+    fn a_quick_restart_keeps_the_start() {
+        // Re-Link restarted by an update: seen up a minute ago.
+        let (mut since, mut last, mut s) = (Some(100), Some(1000), vec![]);
+        assert!(!follow(
+            &mut since,
+            &mut last,
+            &mut s,
+            unwatched(true, 1060)
+        ));
+        assert_eq!((since, last), (Some(100), Some(1000)));
+    }
+
+    #[test]
+    fn last_seen_is_refreshed_every_few_minutes() {
+        let (mut since, mut last, mut s) = (Some(0), Some(1000), vec![]);
+        assert!(!follow(
+            &mut since,
+            &mut last,
+            &mut s,
+            seen(true, 1000 + SEEN_EVERY - 1)
+        ));
+        assert!(follow(
+            &mut since,
+            &mut last,
+            &mut s,
+            seen(true, 1000 + SEEN_EVERY)
+        ));
+        assert_eq!(last, Some(1000 + SEEN_EVERY));
     }
 
     #[test]
     fn only_the_latest_sessions_are_kept() {
-        let (mut since, mut s) = (None, (0..KEEP as u64).collect::<Vec<_>>());
-        follow(&mut since, &mut s, seen(true, 0));
-        follow(&mut since, &mut s, seen(false, 5 * H));
+        let (mut since, mut last, mut s) = (None, None, (0..KEEP as u64).collect::<Vec<_>>());
+        follow(&mut since, &mut last, &mut s, seen(true, 0));
+        follow(&mut since, &mut last, &mut s, seen(false, 5 * H));
         assert_eq!(s.len(), KEEP);
         assert_eq!(*s.last().unwrap(), 5 * H);
         assert_eq!(s[0], 1, "the oldest went");

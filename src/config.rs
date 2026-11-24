@@ -227,6 +227,9 @@ pub struct State {
     pub vpn_hosts: BTreeMap<String, u64>,
     /// When the current VPN session started (Unix seconds), while it is up.
     pub vpn_up_since: Option<u64>,
+    /// The last time Re-Link saw the VPN up (Unix seconds), refreshed every few
+    /// minutes; tells a short restart from a night with the computer off.
+    pub vpn_seen_at: Option<u64>,
     /// How long the latest VPN sessions lasted, in seconds, oldest first.
     pub vpn_sessions: Vec<u64>,
 }

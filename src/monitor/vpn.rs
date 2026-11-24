@@ -82,8 +82,12 @@ impl Monitor {
         };
         self.session_watched = true;
         let st = &mut self.state;
-        if session::follow(&mut st.vpn_up_since, &mut st.vpn_sessions, seen)
-            && let Err(e) = st.save(&self.paths.state)
+        if session::follow(
+            &mut st.vpn_up_since,
+            &mut st.vpn_seen_at,
+            &mut st.vpn_sessions,
+            seen,
+        ) && let Err(e) = st.save(&self.paths.state)
         {
             self.log.line(&format!("save state: {e}"));
         }
